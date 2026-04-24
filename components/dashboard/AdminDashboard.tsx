@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
@@ -85,7 +86,7 @@ export default function AdminDashboard({ userName, dbData }: AdminDashboardProps
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button className="btn btn-ghost btn-sm">📅 Apr 23, 2026</button>
-          <button className="btn btn-primary btn-sm">+ New Admission</button>
+          <Link href="/admin/admissions?new=true" className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>+ New Admission</Link>
         </div>
       </div>
 
@@ -215,19 +216,19 @@ export default function AdminDashboard({ userName, dbData }: AdminDashboardProps
             <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "1rem" }}>Quick Actions</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
               {[
-                { icon: "📝", label: "New Admission", color: "#3b82f6" },
+                { icon: "📝", label: "New Admission", color: "#3b82f6", href: "/admin/admissions?new=true" },
                 { icon: "📢", label: "Announcement", color: "#8b5cf6" },
                 { icon: "🗓️", label: "Timetable AI", color: "#22c55e" },
                 { icon: "📊", label: "Generate Report", color: "#f59e0b" },
                 { icon: "💳", label: "Fee Reminder", color: "#ef4444" },
                 { icon: "👥", label: "Add Staff", color: "#06b6d4" },
               ].map((a) => (
-                <button key={a.label}
+                <Link key={a.label} href={a.href || "#"}
                   className="btn btn-ghost"
-                  style={{ justifyContent: "flex-start", gap: "0.6rem", height: "44px", fontSize: "0.82rem" }}>
+                  style={{ justifyContent: "flex-start", gap: "0.6rem", height: "44px", fontSize: "0.82rem", textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                   <span style={{ fontSize: "1rem" }}>{a.icon}</span>
                   {a.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>

@@ -66,16 +66,57 @@ export async function PATCH(
     if (body.priorityScore !== undefined) updateData.priorityScore = body.priorityScore;
     if (body.waitlistPosition !== undefined) updateData.waitlistPosition = body.waitlistPosition;
 
+    const currentApp = await prisma.admissionApplication.findUnique({ where: { id } });
+    if (!currentApp) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const application = await prisma.admissionApplication.update({
       where: { id },
       data: updateData,
     });
 
     // If approved, increment filled seats
-    if (body.status === "APPROVED") {
+    if (body.status === "APPROVED" && currentApp.status !== "APPROVED") {
       await prisma.admissionCycle.update({
         where: { id: application.cycleId },
         data: { filledSeats: { increment: 1 } },
+      });
+    }
+
+    // Auto-enroll into People (Student) if transitioning to ENROLLED
+    if (body.status === "ENROLLED" && currentApp.status !== "ENROLLED") {
+      const studentCount = await prisma.student.count({ where: { tenantId } });
+      const admissionNo = `STD-${new Date().getFullYear()}-${String(studentCount + 1).padStart(4, "0")}`;
+      
+      const user = await prisma.user.create({
+        data: {
+          tenantId,
+          name: application.studentName,
+          email: `${admissionNo.toLowerCase()}@school.edu`,
+          role: "STUDENT",
+        }
+      });
+
+      const student = await prisma.student.create({
+        data: {
+          tenantId,
+          userId: user.id,
+          admissionNo,
+          dateOfBirth: application.dateOfBirth,
+          gender: application.gender,
+        }
+      });
+
+      await prisma.guardian.create({
+        data: {
+          tenantId,
+          studentId: student.id,
+          name: application.parentName,
+          relation: "Parent",
+          phone: application.parentPhone,
+          email: application.parentEmail,
+        }
       });
     }
 

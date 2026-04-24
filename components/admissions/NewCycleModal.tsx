@@ -18,7 +18,7 @@ export default function NewCycleModal({ academicYears, onClose }: Props) {
     startDate: "",
     endDate: "",
     totalSeats: "",
-    status: "DRAFT",
+    status: "OPEN",
   });
 
   const updateField = (key: string, value: string) => {

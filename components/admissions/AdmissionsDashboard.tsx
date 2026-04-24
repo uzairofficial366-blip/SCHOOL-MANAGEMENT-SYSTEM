@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import AdmissionStats from "./AdmissionStats";
 import CyclesTab from "./CyclesTab";
 import ApplicationsTab from "./ApplicationsTab";
@@ -30,6 +31,17 @@ export default function AdmissionsDashboard({ cycles, applications, academicYear
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setShowNewApp(true);
+      // Clean up the URL so it doesn't stay open on refresh
+      router.replace("/admin/admissions");
+    }
+  }, [searchParams, router]);
 
   const filteredApps = applications.filter((a: any) => {
     if (filterStatus !== "ALL" && a.status !== filterStatus) return false;

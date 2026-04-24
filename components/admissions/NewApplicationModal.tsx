@@ -126,25 +126,32 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
         {/* Step 1: Student Info */}
         {step === 1 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div className="form-group">
-              <label className="form-label">Admission Cycle *</label>
-              <select className="form-input" value={form.cycleId} onChange={(e) => updateField("cycleId", e.target.value)}>
-                <option value="">Select cycle...</option>
-                {cycles.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+            {cycles.length === 0 ? (
+              <div style={{ padding: "1rem", background: "hsl(var(--warning)/0.1)", border: "1px solid hsl(var(--warning)/0.3)", borderRadius: 8, color: "hsl(var(--warning))", textAlign: "center" }}>
+                <strong>No Open Admission Cycles Found</strong>
+                <p style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>You must create and open an admission cycle before creating an application.</p>
+              </div>
+            ) : (
+              <div className="form-group">
+                <label className="form-label">Admission Cycle *</label>
+                <select className="form-input" value={form.cycleId} onChange={(e) => updateField("cycleId", e.target.value)}>
+                  <option value="">Select cycle...</option>
+                  {cycles.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Student Full Name *</label>
-              <input className="form-input" value={form.studentName} onChange={(e) => updateField("studentName", e.target.value)} placeholder="e.g. Ahmed Khan" />
+              <input className="form-input" value={form.studentName} onChange={(e) => updateField("studentName", e.target.value)} placeholder="e.g. Ahmed Khan" disabled={cycles.length === 0} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div className="form-group">
                 <label className="form-label">Date of Birth</label>
-                <input className="form-input" type="date" value={form.dateOfBirth} onChange={(e) => updateField("dateOfBirth", e.target.value)} />
+                <input className="form-input" type="date" value={form.dateOfBirth} onChange={(e) => updateField("dateOfBirth", e.target.value)} disabled={cycles.length === 0} />
               </div>
               <div className="form-group">
                 <label className="form-label">Gender</label>
-                <select className="form-input" value={form.gender} onChange={(e) => updateField("gender", e.target.value)}>
+                <select className="form-input" value={form.gender} onChange={(e) => updateField("gender", e.target.value)} disabled={cycles.length === 0}>
                   <option value="">Select...</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -154,14 +161,14 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
             </div>
             <div className="form-group">
               <label className="form-label">Grade Applying For *</label>
-              <select className="form-input" value={form.gradeAppliedFor} onChange={(e) => updateField("gradeAppliedFor", e.target.value)}>
+              <select className="form-input" value={form.gradeAppliedFor} onChange={(e) => updateField("gradeAppliedFor", e.target.value)} disabled={cycles.length === 0}>
                 <option value="">Select grade...</option>
                 {grades.map((g: any) => <option key={g.id} value={g.name}>{g.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Previous School</label>
-              <input className="form-input" value={form.previousSchool} onChange={(e) => updateField("previousSchool", e.target.value)} placeholder="Name of previous school" />
+              <input className="form-input" value={form.previousSchool} onChange={(e) => updateField("previousSchool", e.target.value)} placeholder="Name of previous school" disabled={cycles.length === 0} />
             </div>
           </div>
         )}
@@ -213,7 +220,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
             {step > 1 ? "← Back" : "Cancel"}
           </button>
           {step < 3 ? (
-            <button className="btn btn-primary btn-sm" onClick={handleNext}>Next →</button>
+            <button className="btn btn-primary btn-sm" onClick={handleNext} disabled={step === 1 && cycles.length === 0}>Next →</button>
           ) : (
             <button className="btn btn-primary btn-sm" disabled={loading} onClick={handleSubmit}>
               {loading ? "Creating..." : "Create Application"}

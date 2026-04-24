@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
 import { prisma } from "@/lib/db/prisma";
+import AddStudentButton from "@/components/students/AddStudentButton";
 
 export const metadata = { title: "Students" };
 
@@ -37,7 +38,7 @@ export default async function StudentsPage() {
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ fontWeight: 700, fontSize: "1.25rem" }}>All Enrolled Students</h3>
-            <button className="btn btn-primary btn-sm">+ Add New Student</button>
+            <AddStudentButton />
           </div>
           
           <div className="table-wrapper">
