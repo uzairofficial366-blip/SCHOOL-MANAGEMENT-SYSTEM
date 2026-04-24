@@ -46,19 +46,28 @@ const atRiskStudents = [
 
 interface AdminDashboardProps {
   userName: string;
+  dbData?: {
+    totalStudents: number;
+    totalStaff: number;
+    activeClasses: number;
+    totalBooks: number;
+    recentAdmissions: any[];
+  };
 }
 
-export default function AdminDashboard({ userName }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, dbData }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "finance" | "ai">("overview");
 
+  const actualAdmissions = dbData?.recentAdmissions || recentAdmissions;
+
   const stats = [
-    { label: "Total Students",    value: "1,248",  change: "+12 this month",  icon: "🎓", color: "#3b82f6", bg: "#eff6ff" },
-    { label: "Teaching Staff",    value: "84",     change: "+2 this month",   icon: "👩‍🏫", color: "#8b5cf6", bg: "#f5f3ff" },
+    { label: "Total Students",    value: dbData ? dbData.totalStudents.toString() : "1,248",  change: "Active in school",  icon: "🎓", color: "#3b82f6", bg: "#eff6ff" },
+    { label: "Teaching Staff",    value: dbData ? dbData.totalStaff.toString() : "84",     change: "Current staff",   icon: "👩‍🏫", color: "#8b5cf6", bg: "#f5f3ff" },
     { label: "Attendance Today",  value: "94.2%",  change: "+1.4% vs last wk",icon: "✅", color: "#22c55e", bg: "#f0fdf4" },
     { label: "Fee Collection",    value: "₨3.2L",  change: "88% of target",   icon: "💳", color: "#f59e0b", bg: "#fffbeb" },
-    { label: "Active Classes",    value: "36",     change: "Across 6 grades",  icon: "🏛️", color: "#06b6d4", bg: "#ecfeff" },
+    { label: "Active Classes",    value: dbData ? dbData.activeClasses.toString() : "36",     change: "Currently running",  icon: "🏛️", color: "#06b6d4", bg: "#ecfeff" },
     { label: "Pending Fees",      value: "₨28K",   change: "14 students",     icon: "⚠️", color: "#ef4444", bg: "#fef2f2" },
-    { label: "Library Books",     value: "4,820",  change: "312 issued",      icon: "📚", color: "#10b981", bg: "#ecfdf5" },
+    { label: "Library Books",     value: dbData ? dbData.totalBooks.toString() : "4,820",  change: "Total catalog",      icon: "📚", color: "#10b981", bg: "#ecfdf5" },
     { label: "AI Risk Alerts",    value: "3",      change: "Needs attention",  icon: "🤖", color: "#f43f5e", bg: "#fff1f2" },
   ];
 
@@ -177,12 +186,12 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentAdmissions.map((s) => (
+                  {actualAdmissions.map((s) => (
                     <tr key={s.name}>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                           <div className="avatar" style={{ width: 30, height: 30, fontSize: "0.7rem" }}>
-                            {s.name.split(" ").map(n => n[0]).join("")}
+                            {s.name.split(" ").map((n: string) => n[0]).join("")}
                           </div>
                           <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>{s.name}</span>
                         </div>
@@ -249,7 +258,7 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `₨${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }}
-                  formatter={(v: number) => [`₨${v.toLocaleString()}`, ""]} />
+                  formatter={(v: any) => [`₨${Number(v || 0).toLocaleString()}`, ""]} />
                 <Area type="monotone" dataKey="collected" stroke="#3b82f6" fill="url(#colCollected)" strokeWidth={2} name="Collected" />
                 <Area type="monotone" dataKey="pending"   stroke="#ef4444" fill="url(#colPending)"   strokeWidth={2} name="Pending" />
               </AreaChart>
@@ -307,7 +316,7 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
               {atRiskStudents.map((s) => (
                 <div key={s.name} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", background: "hsl(var(--danger)/0.05)", borderRadius: "8px", border: "1px solid hsl(var(--danger)/0.15)" }}>
                   <div className="avatar" style={{ width: 36, height: 36, fontSize: "0.8rem", background: "hsl(var(--danger)/0.15)", color: "hsl(var(--danger))" }}>
-                    {s.name.split(" ").map(n => n[0]).join("")}
+                    {s.name.split(" ").map((n: string) => n[0]).join("")}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{s.name}</div>

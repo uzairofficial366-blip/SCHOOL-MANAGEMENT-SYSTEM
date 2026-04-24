@@ -120,6 +120,7 @@ model AcademicYear {
   sections      Section[]
   enrollments   Enrollment[]
   examSchedules ExamSchedule[]
+  admissionCycles AdmissionCycle[]
 
   @@index([tenantId, isCurrent])
   @@map("academic_years")
@@ -831,4 +832,161 @@ model Visitor {
 
   @@index([tenantId, checkIn])
   @@map("visitors")
+}
+
+// ─── ADMISSION MANAGEMENT ──────────────────────────────────────────────────
+model AdmissionCycle {
+  id             String    @id @default(cuid())
+  tenantId       String
+  academicYearId String
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  status         AdmissionCycleStatus @default(DRAFT)
+  totalSeats     Int       @default(0)
+  filledSeats    Int       @default(0)
+  eligibilityRules Json    @default("{}")
+  formConfig     Json      @default("[]") // dynamic form fields
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  academicYear  AcademicYear          @relation(fields: [academicYearId], references: [id])
+  applications  AdmissionApplication[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, academicYearId])
+  @@map("admission_cycles")
+}
+
+model AdmissionApplication {
+  id               String    @id @default(cuid())
+  tenantId         String
+  cycleId          String
+  applicationNo    String
+  studentName      String
+  dateOfBirth      DateTime?
+  gender           String?
+  parentName       String
+  parentEmail      String
+  parentPhone      String
+  gradeAppliedFor  String
+  previousSchool   String?
+  formData         Json      @default("{}")
+  status           ApplicationStatus @default(DRAFT)
+  priorityScore    Int       @default(0) // merit/sibling/alumni points
+  siblingInfo      Json?
+  waitlistPosition Int?
+  rejectionReason  String?
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  cycle     AdmissionCycle      @relation(fields: [cycleId], references: [id])
+  documents AdmissionDocument[]
+  reviews   AdmissionReview[]
+  fees      AdmissionFee[]
+
+  @@unique([tenantId, applicationNo])
+  @@index([tenantId, status])
+  @@index([tenantId, cycleId])
+  @@index([tenantId, gradeAppliedFor])
+  @@map("admission_applications")
+}
+
+model AdmissionDocument {
+  id            String    @id @default(cuid())
+  tenantId      String
+  applicationId String
+  docType       String    // birth_cert, photo, prev_report, etc.
+  fileName      String
+  fileUrl       String
+  fileSize      Int       @default(0)
+  mimeType      String?
+  status        DocVerificationStatus @default(PENDING)
+  verifiedById  String?
+  verifiedAt    DateTime?
+  expiresAt     DateTime?
+  remarks       String?
+  uploadedAt    DateTime  @default(now())
+
+  application AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, applicationId])
+  @@index([tenantId, status])
+  @@map("admission_documents")
+}
+
+model AdmissionReview {
+  id            String    @id @default(cuid())
+  tenantId      String
+  applicationId String
+  reviewerId    String
+  stage         Int       @default(1)
+  decision      ReviewDecision?
+  comments      String?
+  slaDeadline   DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  application AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, applicationId])
+  @@index([tenantId, reviewerId])
+  @@map("admission_reviews")
+}
+
+model AdmissionFee {
+  id            String    @id @default(cuid())
+  tenantId      String
+  applicationId String
+  feeType       String    // registration, admission, tuition_deposit
+  amount        Decimal   @db.Decimal(12, 2)
+  discount      Decimal   @default(0) @db.Decimal(10, 2)
+  amountPaid    Decimal   @default(0) @db.Decimal(12, 2)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  method        PaymentMethod?
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  receiptUrl    String?
+  createdAt     DateTime  @default(now())
+
+  application AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, applicationId])
+  @@index([tenantId, status])
+  @@map("admission_fees")
+}
+
+enum AdmissionCycleStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WAITLISTED
+  ENROLLED
+  WITHDRAWN
+}
+
+enum DocVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum ReviewDecision {
+  APPROVE
+  REJECT
+  WAITLIST
+  ESCALATE
 }
