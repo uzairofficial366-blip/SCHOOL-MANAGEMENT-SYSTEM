@@ -29,15 +29,7 @@ export default async function TeacherDashboard() {
     );
   }
 
-  // 1. Classes Today (dayOfWeek 0=Mon, 1=Tue etc...)
-  const dayOfWeek = new Date().getDay() - 1; 
-  const classesToday = await prisma.timetableSlot.findMany({
-    where: { tenantId, staffId: staff.id, dayOfWeek: dayOfWeek >= 0 && dayOfWeek <= 4 ? dayOfWeek : -1 },
-    include: { section: { include: { grade: true } }, subject: true },
-    orderBy: { startTime: 'asc' }
-  });
-
-  // 2. Pending Assignments to Grade
+  // Pending Assignments to Grade
   const pendingGrades = await prisma.submission.count({
     where: {
       tenantId,
@@ -50,17 +42,6 @@ export default async function TeacherDashboard() {
     }
   });
 
-  // 3. Total Students
-  const teacherSections = await prisma.timetableSlot.findMany({
-    where: { tenantId, staffId: staff.id },
-    select: { sectionId: true },
-    distinct: ['sectionId']
-  });
-  const sectionIds = teacherSections.map(s => s.sectionId);
-  const totalStudents = await prisma.enrollment.count({
-    where: { tenantId, sectionId: { in: sectionIds }, status: "ACTIVE" }
-  });
-
   // Announcements
   const announcements = await prisma.announcement.findMany({
     where: { tenantId },
@@ -68,28 +49,13 @@ export default async function TeacherDashboard() {
     take: 5
   });
 
-  // Students in sections (for Roster & Attendance)
-  const roster = await prisma.section.findMany({
-    where: { id: { in: sectionIds } },
-    include: {
-      grade: true,
-      enrollments: {
-        where: { status: "ACTIVE" },
-        include: { student: { include: { user: true } } }
-      }
-    }
-  });
-
   return (
     <>
       <Topbar title="Teacher Dashboard" />
       <TeacherDashboardClient 
         staff={staff}
-        classesToday={classesToday}
         pendingGrades={pendingGrades}
-        totalStudents={totalStudents}
         announcements={announcements}
-        roster={roster}
         tenantId={tenantId}
       />
     </>
