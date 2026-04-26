@@ -31,6 +31,20 @@ export default async function StudentsPage() {
     orderBy: { user: { name: 'asc' } }
   });
 
+  const academicYears = await prisma.academicYear.findMany({
+    where: { tenantId }
+  });
+
+  const sections = await prisma.section.findMany({
+    where: { tenantId, deletedAt: null },
+    include: { grade: true }
+  });
+
+  const grades = await prisma.grade.findMany({
+    where: { tenantId, deletedAt: null },
+    orderBy: { level: 'asc' }
+  });
+
   return (
     <>
       <Topbar title="Students Directory" breadcrumbs={[{ label: "Home" }, { label: "Admin", href: "/admin" }, { label: "Students" }]} />
@@ -38,7 +52,7 @@ export default async function StudentsPage() {
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ fontWeight: 700, fontSize: "1.25rem" }}>All Enrolled Students</h3>
-            <AddStudentButton />
+            <AddStudentButton grades={grades} sections={sections} academicYears={academicYears} />
           </div>
           
           <div className="table-wrapper">

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(1),
   password: z.string().min(1),
   tenantSlug: z.string().min(1),
   totpCode: z.string().optional(),
@@ -39,9 +39,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!tenant) return null;
 
           // Resolve user
-          const user = await prisma.user.findFirst({
+          let user = await prisma.user.findFirst({
             where: { tenantId: tenant.id, email, isActive: true, deletedAt: null },
           });
+
+          if (!user) {
+            const staff = await prisma.staff.findFirst({
+              where: { tenantId: tenant.id, employeeId: email, deletedAt: null },
+              include: { user: true },
+            });
+            if (staff && staff.user.isActive && !staff.user.deletedAt) {
+              user = staff.user;
+            } else {
+              const student = await prisma.student.findFirst({
+                where: { tenantId: tenant.id, admissionNo: email, deletedAt: null },
+                include: { user: true },
+              });
+              if (student && student.user.isActive && !student.user.deletedAt) {
+                user = student.user;
+              }
+            }
+          }
+
           if (!user?.passwordHash) return null;
 
           const valid = await bcrypt.compare(password, user.passwordHash);

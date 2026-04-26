@@ -20,6 +20,7 @@ export default async function AdmissionsPage() {
     applications,
     academicYears,
     grades,
+    sections
   ] = await Promise.all([
     prisma.admissionCycle.findMany({
       where: { tenantId },
@@ -51,6 +52,10 @@ export default async function AdmissionsPage() {
       where: { tenantId, deletedAt: null },
       orderBy: { level: "asc" },
     }),
+    prisma.section.findMany({
+      where: { tenantId, deletedAt: null },
+      include: { grade: true }
+    })
   ]);
 
   // Compute stats
@@ -119,6 +124,7 @@ export default async function AdmissionsPage() {
           applications={serializedApplications}
           academicYears={serializedAcademicYears}
           grades={grades}
+          sections={sections}
           stats={{
             totalApplications,
             statusCounts,

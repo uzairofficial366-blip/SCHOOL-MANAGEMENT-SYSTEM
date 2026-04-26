@@ -40,8 +40,8 @@ export default async function StaffPage() {
                   <th>Name</th>
                   <th>Employee ID</th>
                   <th>Email</th>
-                  <th>Department</th>
-                  <th>Designation</th>
+                  <th>Subject</th>
+                  {/* <th>Designation</th> */}
                   <th>Role Type</th>
                 </tr>
               </thead>
@@ -59,7 +59,7 @@ export default async function StaffPage() {
                     <td style={{ fontFamily: "monospace" }}>{staff.employeeId}</td>
                     <td style={{ color: "hsl(var(--text-muted))" }}>{staff.user.email}</td>
                     <td>{staff.department || "-"}</td>
-                    <td>{staff.designation || "-"}</td>
+                    {/* <td>{staff.designation || "-"}</td> */}
                     <td>
                       <span className="badge" style={{ background: "hsl(var(--accent)/0.1)", color: "hsl(var(--accent))" }}>
                         {staff.user.role}

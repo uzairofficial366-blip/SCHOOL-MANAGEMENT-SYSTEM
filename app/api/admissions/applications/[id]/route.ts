@@ -68,7 +68,10 @@ export async function PATCH(
     if (body.priorityScore !== undefined) updateData.priorityScore = body.priorityScore;
     if (body.waitlistPosition !== undefined) updateData.waitlistPosition = body.waitlistPosition;
 
-    const currentApp = await prisma.admissionApplication.findUnique({ where: { id } });
+    const currentApp = await prisma.admissionApplication.findUnique({ 
+      where: { id },
+      include: { cycle: true }
+    });
     if (!currentApp) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -109,6 +112,18 @@ export async function PATCH(
           gender: application.gender,
         }
       });
+
+      if (body.sectionId) {
+        await prisma.enrollment.create({
+          data: {
+            tenantId,
+            studentId: student.id,
+            sectionId: body.sectionId,
+            academicYearId: currentApp.cycle.academicYearId,
+            status: "ACTIVE"
+          }
+        });
+      }
 
       await prisma.guardian.create({
         data: {

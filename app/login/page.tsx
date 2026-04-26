@@ -79,9 +79,9 @@ export default function LoginPage() {
                 className="form-input" value={form.tenantSlug} onChange={handleChange} required autoComplete="organization" />
             </div>
             <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <input name="email" type="email" placeholder="you@school.edu"
-                className="form-input" value={form.email} onChange={handleChange} required autoComplete="email" />
+              <label className="form-label">Email or ID</label>
+              <input name="email" type="text" placeholder="you@school.edu or EMP123"
+                className="form-input" value={form.email} onChange={handleChange} required autoComplete="username" />
             </div>
             <div className="form-group">
               <label className="form-label">Password</label>

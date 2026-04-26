@@ -177,6 +177,7 @@ model Section {
 
   @@index([tenantId, gradeId])
   @@index([tenantId, academicYearId])
+  @@unique([tenantId, academicYearId, gradeId, name])
   @@map("sections")
 }
 

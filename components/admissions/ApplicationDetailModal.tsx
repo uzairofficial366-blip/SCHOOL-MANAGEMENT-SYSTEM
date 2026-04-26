@@ -25,20 +25,37 @@ const STATUS_FLOW = ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "ENROLLED
 
 interface Props {
   application: any;
+  sections: any[];
   onClose: () => void;
 }
 
-export default function ApplicationDetailModal({ application, onClose }: Props) {
+export default function ApplicationDetailModal({ application, sections, onClose }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [showEnrollInput, setShowEnrollInput] = useState(false);
+  const [selectedSectionId, setSelectedSectionId] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleStatusChange = async (newStatus: string) => {
+    setErrorMsg("");
     if (newStatus === "REJECTED" && !showRejectInput) {
       setShowRejectInput(true);
+      setShowEnrollInput(false);
       return;
     }
+    if (newStatus === "ENROLLED" && !showEnrollInput) {
+      setShowEnrollInput(true);
+      setShowRejectInput(false);
+      return;
+    }
+    
+    if (newStatus === "ENROLLED" && !selectedSectionId) {
+      setErrorMsg("Please select a section to enroll the student in.");
+      return;
+    }
+
     setLoading(true);
     try {
       await fetch(`/api/admissions/applications/${application.id}`, {
@@ -47,11 +64,17 @@ export default function ApplicationDetailModal({ application, onClose }: Props) 
         body: JSON.stringify({
           status: newStatus,
           rejectionReason: newStatus === "REJECTED" ? rejectReason : undefined,
+          sectionId: newStatus === "ENROLLED" ? selectedSectionId : undefined,
         }),
       });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update status");
+
       router.refresh();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
+      setErrorMsg(err.message || "An error occurred");
       console.error("Status update error:", err);
     } finally {
       setLoading(false);
@@ -60,6 +83,9 @@ export default function ApplicationDetailModal({ application, onClose }: Props) 
 
   const actions = STATUS_ACTIONS[application.status] || [];
   const currentStepIdx = STATUS_FLOW.indexOf(application.status);
+  
+  // Filter sections that belong to the academic year of the cycle
+  const availableSections = sections.filter(s => s.academicYearId === application.cycle.academicYearId);
 
   return (
     <div style={{
@@ -72,6 +98,13 @@ export default function ApplicationDetailModal({ application, onClose }: Props) 
         width: "100%", maxWidth: 720, maxHeight: "90vh", overflow: "auto",
         padding: "2rem", animation: "fadeUp 0.3s ease",
       }} onClick={(e) => e.stopPropagation()}>
+        
+        {errorMsg && (
+          <div style={{ padding: "0.5rem 0.75rem", background: "hsl(var(--danger)/0.08)", border: "1px solid hsl(var(--danger)/0.2)", borderRadius: 8, color: "hsl(var(--danger))", fontSize: "0.82rem", marginBottom: "1rem" }}>
+            {errorMsg}
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
           <div>
@@ -179,17 +212,17 @@ export default function ApplicationDetailModal({ application, onClose }: Props) 
 
         {/* Reject Input */}
         {showRejectInput && (
-          <div style={{ marginBottom: "1rem" }}>
-            <label className="form-label">Rejection Reason *</label>
+          <div style={{ marginBottom: "1rem", padding: "1rem", background: "hsl(var(--danger)/0.05)", borderRadius: "8px", border: "1px solid hsl(var(--danger)/0.2)" }}>
+            <label className="form-label" style={{ color: "hsl(var(--danger))" }}>Rejection Reason *</label>
             <textarea
               className="form-input"
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Provide a reason for rejection..."
-              style={{ resize: "vertical" }}
+              style={{ resize: "vertical", borderColor: "hsl(var(--danger)/0.3)" }}
             />
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
               <button className="btn btn-danger btn-sm" disabled={!rejectReason || loading} onClick={() => handleStatusChange("REJECTED")}>
                 {loading ? "Processing..." : "Confirm Rejection"}
               </button>
@@ -198,8 +231,35 @@ export default function ApplicationDetailModal({ application, onClose }: Props) 
           </div>
         )}
 
+        {/* Enroll Input */}
+        {showEnrollInput && (
+          <div style={{ marginBottom: "1rem", padding: "1rem", background: "hsl(var(--info)/0.05)", borderRadius: "8px", border: "1px solid hsl(var(--info)/0.2)" }}>
+            <label className="form-label" style={{ color: "hsl(var(--info))" }}>Assign Section *</label>
+            <select 
+              className="form-input" 
+              value={selectedSectionId} 
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              style={{ borderColor: "hsl(var(--info)/0.3)" }}
+            >
+              <option value="">Select a section...</option>
+              {availableSections.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.grade.name} - {s.name}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))", marginTop: "0.4rem" }}>
+              The student will be registered and enrolled into this section for {application.cycle.academicYear?.name || "the cycle's academic year"}.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <button className="btn btn-info btn-sm" disabled={!selectedSectionId || loading} onClick={() => handleStatusChange("ENROLLED")} style={{ background: "hsl(var(--info))", color: "white", border: "none" }}>
+                {loading ? "Processing..." : "Confirm Enrollment"}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setShowEnrollInput(false); setSelectedSectionId(""); }}>Cancel</button>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
-        {actions.length > 0 && !showRejectInput && (
+        {actions.length > 0 && !showRejectInput && !showEnrollInput && (
           <div style={{ display: "flex", gap: "0.5rem", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
             {actions.map((action) => (
               <button

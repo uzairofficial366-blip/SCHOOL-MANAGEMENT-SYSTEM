@@ -14,6 +14,7 @@ interface Props {
   applications: any[];
   academicYears: any[];
   grades: any[];
+  sections: any[];
   stats: {
     totalApplications: number;
     statusCounts: Record<string, number>;
@@ -24,7 +25,7 @@ interface Props {
   };
 }
 
-export default function AdmissionsDashboard({ cycles, applications, academicYears, grades, stats }: Props) {
+export default function AdmissionsDashboard({ cycles, applications, academicYears, grades, sections, stats }: Props) {
   const [activeTab, setActiveTab] = useState<"overview" | "applications" | "cycles">("overview");
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [showNewApp, setShowNewApp] = useState(false);
@@ -128,6 +129,7 @@ export default function AdmissionsDashboard({ cycles, applications, academicYear
       {selectedApp && (
         <ApplicationDetailModal
           application={selectedApp}
+          sections={sections}
           onClose={() => setSelectedApp(null)}
         />
       )}

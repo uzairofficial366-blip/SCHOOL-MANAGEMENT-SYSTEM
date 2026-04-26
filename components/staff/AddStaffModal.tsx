@@ -10,7 +10,7 @@ export default function AddStaffModal() {
   
   // Core fields
   const [formData, setFormData] = useState<any>({
-    name: "", email: "", phone: "", role: "",
+    name: "", email: "", phone: "", role: "", password: "",
     dob: "", gender: "", bloodGroup: "",
     currentAddress: "", permanentAddress: "",
     joinDate: "", emergencyContactName: "", emergencyContactPhone: "",
@@ -25,8 +25,8 @@ export default function AddStaffModal() {
   };
 
   const handleNext = () => {
-    if (!formData.name || !formData.email || !formData.role) {
-      setError("Please fill out Name, Email, and Role to proceed.");
+    if (!formData.name || !formData.email || !formData.role || !formData.password) {
+      setError("Please fill out Name, Email, Password, and Role to proceed.");
       return;
     }
     setError("");
@@ -72,7 +72,7 @@ export default function AddStaffModal() {
       }
 
       setIsOpen(false);
-      setFormData({ name: "", email: "", phone: "", role: "" });
+      setFormData({ name: "", email: "", phone: "", role: "", password: "" });
       setStep(1);
       router.refresh();
     } catch (err: any) {
@@ -120,6 +120,10 @@ export default function AddStaffModal() {
                   <div className="form-group">
                     <label>Email *</label>
                     <input type="email" name="email" value={formData.email} onChange={handleChange} required className="form-control" />
+                  </div>
+                  <div className="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" value={formData.password} onChange={handleChange} required className="form-control" />
                   </div>
                   <div className="form-group">
                     <label>Phone Number</label>
