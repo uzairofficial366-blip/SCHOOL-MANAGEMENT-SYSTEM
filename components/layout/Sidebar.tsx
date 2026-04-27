@@ -71,9 +71,8 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "Timetable", href: "/student/timetable", icon: "🗓️" },
       { label: "My Courses", href: "/student/courses", icon: "📚" },
       { label: "Attendance", href: "/student/attendance", icon: "✅" },
-      { label: "Grades", href: "/student/grades", icon: "📊" },
+      { label: "Grades & Results", href: "/student/results", icon: "📊" },
       { label: "Assignments", href: "/student/assignments", icon: "📝" },
-      { label: "Results", href: "/student/results", icon: "📄" },
     ]},
     { section: "More", items: [
       { label: "Announcements", href: "/student/announcements", icon: "📢" },

@@ -22,17 +22,26 @@ export async function GET(req: NextRequest) {
       // Admins see everything
       if (userRole === "ADMIN" || userRole === "SUPER_ADMIN") return true;
 
-      const targetRoles = ann.targetRoles as string[];
-      if (!Array.isArray(targetRoles)) return false;
-
-      // Check specific roles
-      if (userRole === "STUDENT" && targetRoles.includes("STUDENT")) return true;
-      if (userRole === "TEACHER" && targetRoles.includes("TEACHER")) return true;
+      if (!ann.targetRoles) return false;
       
-      // If the user is neither student nor teacher, they are considered "Other Staff"
-      if (userRole !== "STUDENT" && userRole !== "TEACHER" && targetRoles.includes("STAFF")) return true;
+      try {
+        const targetRoles = typeof ann.targetRoles === 'string' && ann.targetRoles.startsWith('[')
+          ? JSON.parse(ann.targetRoles)
+          : (ann.targetRoles as string).split(',').map(r => r.trim());
 
-      return false;
+        if (!Array.isArray(targetRoles)) return false;
+
+        // Check specific roles
+        if (userRole === "STUDENT" && targetRoles.includes("STUDENT")) return true;
+        if (userRole === "TEACHER" && targetRoles.includes("TEACHER")) return true;
+        
+        // If the user is neither student nor teacher, they are considered "Other Staff"
+        if (userRole !== "STUDENT" && userRole !== "TEACHER" && targetRoles.includes("STAFF")) return true;
+
+        return false;
+      } catch (e) {
+        return false;
+      }
     });
 
     return NextResponse.json({ announcements: filteredAnnouncements });

@@ -11,7 +11,11 @@ export default async function TeacherDashboard() {
   if (!session || session.user?.role !== "TEACHER") redirect("/login");
 
   const tenantId = session.user?.tenantId as string;
-  const userId = session.user?.id as string;
+  const userId = (session.user as any)?.id as string;
+
+  if (!userId) {
+    redirect("/login?error=SessionExpired");
+  }
 
   const staff = await prisma.staff.findFirst({
     where: { tenantId, userId, deletedAt: null },
@@ -43,10 +47,22 @@ export default async function TeacherDashboard() {
   });
 
   // Announcements
-  const announcements = await prisma.announcement.findMany({
+  const announcementsRaw = await prisma.announcement.findMany({
     where: { tenantId },
     orderBy: { createdAt: 'desc' },
-    take: 5
+    take: 10
+  });
+
+  const announcements = announcementsRaw.filter(ann => {
+    if (!ann.targetRoles) return false;
+    try {
+      const roles = typeof ann.targetRoles === 'string' && ann.targetRoles.startsWith('[') 
+        ? JSON.parse(ann.targetRoles) 
+        : (ann.targetRoles as string).split(',');
+      return Array.isArray(roles) && roles.map(r => r.trim()).includes("TEACHER");
+    } catch (e) {
+      return false;
+    }
   });
 
   // Classes Today

@@ -284,6 +284,7 @@ model Student {
   hostelAllocation    HostelAllocation?
   transportAssignment TransportAssignment?
   aiPredictions       AiPrediction[]
+  achievements        Achievement[]
 
   @@unique([tenantId, admissionNo])
   @@index([tenantId])
@@ -1070,3 +1071,21 @@ enum ReviewDecision {
   ESCALATE
 }
 
+
+model Achievement {
+  id               String   @id @default(cuid())
+  tenantId         String
+  studentId        String
+  title            String
+  category         String   // ACADEMIC, SPORTS, EXTRACURRICULAR, BEHAVIORAL
+  awardedDate      DateTime
+  issuingAuthority String
+  description      String?
+  certificateUrl   String?
+  createdAt        DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([tenantId, studentId])
+  @@map("achievements")
+}

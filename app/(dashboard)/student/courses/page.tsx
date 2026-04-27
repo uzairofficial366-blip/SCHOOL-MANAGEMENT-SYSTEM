@@ -10,7 +10,11 @@ export default async function StudentCourses() {
   if (!session || session.user?.role !== "STUDENT") redirect("/login");
 
   const tenantId = session.user?.tenantId as string;
-  const userId = session.user?.id as string;
+  const userId = (session.user as any)?.id as string;
+
+  if (!userId) {
+    redirect("/login?error=SessionExpired");
+  }
 
   // 1. Get Student and active enrollment
   const student = await prisma.student.findFirst({

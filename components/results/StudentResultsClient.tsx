@@ -9,9 +9,13 @@ const GRADE_COLORS: Record<string, string> = {
   "D": "#c2410c", "F": "#b91c1c",
 };
 
+import { Printer, Filter, Download, GraduationCap, BookOpen, AlertCircle, TrendingUp } from "lucide-react";
+
 export default function StudentResultsClient() {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [termFilter, setTermFilter] = useState("");
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -28,90 +32,147 @@ export default function StudentResultsClient() {
     fetchRecords();
   }, []);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const filteredRecords = records.filter(rec => {
+    const matchSubject = !subjectFilter || rec.subjectId === subjectFilter;
+    const matchTerm = !termFilter || rec.exam?.examSchedule?.id === termFilter;
+    return matchSubject && matchTerm;
+  });
+
+  const subjects = Array.from(new Set(records.map(r => r.subject))).filter(Boolean);
+  const terms = Array.from(new Set(records.map(r => r.exam?.examSchedule))).filter(Boolean);
+
   if (loading) {
     return <div className="card" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading your results...</div>;
   }
 
   if (records.length === 0) {
     return (
-      <div className="card" style={{ padding: "4rem 2rem", textAlign: "center" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📋</div>
-        <h4 style={{ fontWeight: 600 }}>No Results Yet</h4>
-        <p style={{ color: "var(--text-muted)" }}>Your results have not been published yet.</p>
+      <div className="card glass" style={{ padding: "4rem 2rem", textAlign: "center" }}>
+        <div style={{ fontSize: "3.5rem", marginBottom: "1.5rem" }}>🎓</div>
+        <h3 style={{ fontWeight: 800, fontSize: "1.5rem", marginBottom: "0.5rem" }}>No Results Published</h3>
+        <p style={{ color: "var(--text-muted)" }}>Your performance records will appear here once they are published by the administration.</p>
       </div>
     );
   }
 
-  const avgPct = records.reduce((s, r) => s + (Number(r.marksObtained) / Number(r.totalMarks)) * 100, 0) / records.length;
+  const avgPct = filteredRecords.length > 0 
+    ? filteredRecords.reduce((s, r) => s + (Number(r.marksObtained) / Number(r.totalMarks)) * 100, 0) / filteredRecords.length
+    : 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
-        {[
-          { label: "Total Subjects", value: records.length, color: "#3b82f6" },
-          { label: "Average Score", value: `${avgPct.toFixed(1)}%`, color: "#8b5cf6" },
-          { label: "Passed", value: records.filter((r) => (Number(r.marksObtained) / Number(r.totalMarks)) >= 0.5).length, color: "#16a34a" },
-          { label: "Failed", value: records.filter((r) => (Number(r.marksObtained) / Number(r.totalMarks)) < 0.5).length, color: "#dc2626" },
-        ].map((s) => (
-          <div key={s.label} className="card" style={{ textAlign: "center", border: `1px solid ${s.color}30`, background: `${s.color}08` }}>
-            <div style={{ fontSize: "1.75rem", fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>{s.label}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+      
+      {/* ACTION BAR */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <select className="form-control" value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} style={{ minWidth: "180px" }}>
+              <option value="">All Subjects</option>
+              {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
           </div>
-        ))}
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <select className="form-control" value={termFilter} onChange={(e) => setTermFilter(e.target.value)} style={{ minWidth: "180px" }}>
+              <option value="">All Terms</option>
+              {terms.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        </div>
+        
+        <button onClick={handlePrint} className="btn btn-secondary no-print">
+          <Printer size={18} /> Print Report
+        </button>
       </div>
 
-      {/* Results Table */}
-      <div className="card">
-        <h3 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "1.25rem" }}>My Results</h3>
+      {/* SUMMARY CARDS */}
+      <div className="grid-4">
+        <div className="card glass" style={{ borderBottom: "4px solid #3b82f6" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <BookOpen size={14} /> Total Subjects
+          </div>
+          <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.5rem" }}>{filteredRecords.length}</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: "4px solid #8b5cf6" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <TrendingUp size={14} /> Average Score
+          </div>
+          <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.5rem" }}>{avgPct.toFixed(1)}%</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: "4px solid #16a34a" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <GraduationCap size={14} /> GPA
+          </div>
+          <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.5rem" }}>{(avgPct / 25).toFixed(2)}</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: "4px solid #eab308" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <AlertCircle size={14} /> Rank
+          </div>
+          <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.5rem" }}>N/A</div>
+        </div>
+      </div>
+
+      {/* RESULTS TABLE */}
+      <div className="card print-p-0">
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f8f9fa" }}>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "2px solid #eaeaea" }}>Subject</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "2px solid #eaeaea" }}>Exam</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center", borderBottom: "2px solid #eaeaea" }}>Marks</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center", borderBottom: "2px solid #eaeaea" }}>Percentage</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center", borderBottom: "2px solid #eaeaea" }}>Grade</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "2px solid #eaeaea" }}>Status</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "2px solid #eaeaea" }}>Remarks</th>
+              <tr style={{ background: "hsl(var(--bg-muted))" }}>
+                <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid var(--border)" }}>Subject</th>
+                <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid var(--border)" }}>Term/Exam</th>
+                <th style={{ padding: "1rem", textAlign: "center", borderBottom: "1px solid var(--border)" }}>Marks</th>
+                <th style={{ padding: "1rem", textAlign: "center", borderBottom: "1px solid var(--border)" }}>Grade</th>
+                <th style={{ padding: "1rem", textAlign: "center", borderBottom: "1px solid var(--border)" }}>Result</th>
               </tr>
             </thead>
             <tbody>
-              {records.map((rec) => {
-                const pct = ((Number(rec.marksObtained) / Number(rec.totalMarks)) * 100).toFixed(1);
-                const pass = Number(pct) >= 50;
-                const gradeColor = GRADE_COLORS[rec.grade] || "#64748b";
+              {filteredRecords.map((rec) => {
+                const pct = (Number(rec.marksObtained) / Number(rec.totalMarks)) * 100;
+                const isPass = pct >= 50;
+                const color = GRADE_COLORS[rec.grade] || "hsl(var(--primary))";
+                
                 return (
-                  <tr key={rec.id} style={{ borderBottom: "1px solid #eaeaea" }}>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ fontWeight: 600 }}>{rec.subject?.name}</div>
+                  <tr key={rec.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "1rem" }}>
+                      <div style={{ fontWeight: 700 }}>{rec.subject?.name}</div>
                       <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{rec.subject?.code}</div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                      {rec.exam?.examSchedule?.name || "—"}
+                    <td style={{ padding: "1rem" }}>
+                      <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{rec.exam?.examSchedule?.name}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{new Date(rec.createdAt).toLocaleDateString()}</div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 600 }}>
-                      {Number(rec.marksObtained).toFixed(0)} / {Number(rec.totalMarks).toFixed(0)}
+                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                      <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>{Number(rec.marksObtained)} / {Number(rec.totalMarks)}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{pct.toFixed(1)}%</div>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
-                      <div style={{ position: "relative", height: "6px", background: "#eaeaea", borderRadius: "3px", width: "80px", margin: "0 auto" }}>
-                        <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${pct}%`, background: pass ? "#16a34a" : "#dc2626", borderRadius: "3px" }} />
-                      </div>
-                      <div style={{ fontSize: "0.75rem", marginTop: "0.25rem", fontWeight: 600, color: pass ? "#16a34a" : "#dc2626" }}>{pct}%</div>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
-                      <span style={{ fontWeight: 700, fontSize: "1rem", color: gradeColor, background: `${gradeColor}15`, padding: "0.2rem 0.6rem", borderRadius: "4px" }}>
-                        {rec.grade || "—"}
+                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                      <span style={{ 
+                        background: `${color}15`, 
+                        color: color, 
+                        padding: "0.4rem 0.8rem", 
+                        borderRadius: "6px", 
+                        fontWeight: 800,
+                        fontSize: "1rem"
+                      }}>
+                        {rec.grade || "N/A"}
                       </span>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <span style={{ padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 600, background: pass ? "#dcfce7" : "#fee2e2", color: pass ? "#15803d" : "#b91c1c" }}>
-                        {pass ? "Pass" : "Fail"}
+                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                      <span style={{ 
+                        background: isPass ? "#dcfce7" : "#fee2e2", 
+                        color: isPass ? "#16a34a" : "#dc2626",
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "2rem",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        textTransform: "uppercase"
+                      }}>
+                        {isPass ? "Pass" : "Fail"}
                       </span>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                      {rec.remarks || "—"}
                     </td>
                   </tr>
                 );
@@ -120,6 +181,17 @@ export default function StudentResultsClient() {
           </table>
         </div>
       </div>
+
+      <style jsx global>{`
+        @media print {
+          .no-print { display: none !important; }
+          .app-layout { display: block !important; }
+          .main-content { margin-left: 0 !important; padding: 0 !important; }
+          .page-body { padding: 0 !important; }
+          .card { border: none !important; box-shadow: none !important; }
+          .print-p-0 { padding: 0 !important; }
+        }
+      `}</style>
     </div>
   );
 }

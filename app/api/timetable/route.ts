@@ -22,19 +22,27 @@ export async function GET(req: NextRequest) {
 
     // Role-based filtering
     if (role === 'TEACHER') {
-      const staff = await prisma.staff.findUnique({ where: { userId: session.user.id } });
+      const userId = (session.user as any)?.id;
+      if (!userId) return NextResponse.json({ error: "Missing User ID in session" }, { status: 401 });
+      
+      const staff = await prisma.staff.findUnique({ where: { userId } });
       if (staff) {
         whereClause.staffId = staff.id;
+      } else {
+        return NextResponse.json({ slots: [] });
       }
     } else if (role === 'STUDENT') {
+      const userId = (session.user as any)?.id;
+      if (!userId) return NextResponse.json({ error: "Missing User ID in session" }, { status: 401 });
+
       const student = await prisma.student.findUnique({ 
-        where: { userId: session.user.id },
+        where: { userId },
         include: { enrollments: { where: { status: 'ACTIVE' } } }
       });
       if (student && student.enrollments.length > 0) {
         whereClause.sectionId = student.enrollments[0].sectionId;
       } else {
-        return NextResponse.json({ slots: [] }); // Student with no active enrollment
+        return NextResponse.json({ slots: [] });
       }
     }
 
@@ -105,7 +113,12 @@ export async function POST(req: NextRequest) {
         room
       },
       include: {
-        section: { include: { grade: true } },
+        section: { 
+          include: { 
+            grade: true,
+            classTeacher: { include: { user: { select: { name: true } } } }
+          } 
+        },
         subject: true,
         staff: { include: { user: true } }
       }
