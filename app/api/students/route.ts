@@ -5,6 +5,43 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user?.role as string)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const tenantId = session.user?.tenantId as string;
+    const { searchParams } = new URL(req.url);
+    const sectionId = searchParams.get("sectionId");
+
+    let studentIds: string[] | undefined;
+    if (sectionId) {
+      const enrollments = await prisma.enrollment.findMany({
+        where: { tenantId, sectionId, status: "ACTIVE" },
+        select: { studentId: true },
+      });
+      studentIds = enrollments.map((e) => e.studentId);
+    }
+
+    const students = await prisma.student.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        ...(studentIds !== undefined ? { id: { in: studentIds } } : {}),
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+      orderBy: { admissionNo: "asc" },
+    });
+
+    return NextResponse.json({ students });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();

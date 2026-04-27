@@ -33,7 +33,7 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "Classes & Sections", href: "/admin/sections", icon: "🏛️" },
       { label: "Subjects", href: "/admin/subjects", icon: "📚" },
       { label: "Timetable", href: "/admin/timetable", icon: "🗓️" },
-      { label: "Exams", href: "/admin/exams", icon: "📄" },
+      { label: "Results", href: "/admin/results", icon: "📄" },
     ]},
     { section: "People", items: [
       { label: "Students", href: "/admin/students", icon: "🎓" },
@@ -47,6 +47,7 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
   TEACHER: [
     { section: "Overview", items: [{ label: "Dashboard", href: "/teacher", icon: "⊞" }] },
     { section: "Teaching", items: [
+      { label: "Timetable", href: "/teacher/timetable", icon: "🗓️" },
       { label: "My Classes", href: "/teacher/classes", icon: "🏛️" },
       { label: "Attendance", href: "/teacher/attendance", icon: "✅" },
       { label: "Gradebook", href: "/teacher/gradebook", icon: "📊" },
@@ -54,19 +55,24 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "LMS Content", href: "/teacher/lms", icon: "🎬" },
     ]},
     { section: "Communication", items: [
+      { label: "Announcements", href: "/teacher/announcements", icon: "📢" },
+      { label: "Calendar", href: "/teacher/calendar", icon: "📅" },
       { label: "Messages", href: "/teacher/messages", icon: "💬" },
     ]},
   ],
   STUDENT: [
     { section: "Overview", items: [{ label: "Dashboard", href: "/student", icon: "⊞" }] },
     { section: "Academics", items: [
+      { label: "Timetable", href: "/student/timetable", icon: "🗓️" },
       { label: "My Courses", href: "/student/courses", icon: "📚" },
       { label: "Attendance", href: "/student/attendance", icon: "✅" },
       { label: "Grades", href: "/student/grades", icon: "📊" },
       { label: "Assignments", href: "/student/assignments", icon: "📝" },
-      { label: "Exams", href: "/student/exams", icon: "📄" },
+      { label: "Results", href: "/student/results", icon: "📄" },
     ]},
     { section: "More", items: [
+      { label: "Announcements", href: "/student/announcements", icon: "📢" },
+      { label: "Calendar", href: "/student/calendar", icon: "📅" },
       { label: "Achievements", href: "/student/achievements", icon: "🏆" },
       { label: "Library", href: "/student/library", icon: "📖" },
       { label: "Messages", href: "/student/messages", icon: "💬" },
@@ -81,6 +87,7 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "Transport", href: "/parent/transport", icon: "🚌" },
     ]},
     { section: "Communication", items: [
+      { label: "Announcements", href: "/parent/announcements", icon: "📢" },
       { label: "Messages", href: "/parent/messages", icon: "💬" },
     ]},
   ],
@@ -92,6 +99,9 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "Concessions", href: "/accountant/concessions", icon: "🏷️" },
       { label: "Payroll", href: "/accountant/payroll", icon: "💰" },
       { label: "Reports", href: "/accountant/reports", icon: "📊" },
+    ]},
+    { section: "Communication", items: [
+      { label: "Announcements", href: "/accountant/announcements", icon: "📢" },
     ]},
   ],
   LIBRARIAN: [

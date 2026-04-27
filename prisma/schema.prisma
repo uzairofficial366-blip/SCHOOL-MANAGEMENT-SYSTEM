@@ -33,6 +33,7 @@ model Tenant {
   vehicles       Vehicle[]
   inventoryItems InventoryItem[]
   books          Book[]
+  events         Event[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -174,6 +175,7 @@ model Section {
   enrollments       Enrollment[]
   timetableSlots    TimetableSlot[]
   attendanceRecords AttendanceRecord[]
+  subjectAllocations SubjectAllocation[]
 
   @@index([tenantId, gradeId])
   @@index([tenantId, academicYearId])
@@ -196,6 +198,7 @@ model Subject {
   lmsContent     LmsContent[]
   exams          Exam[]
   gradeRecords   GradeRecord[]
+  allocations    SubjectAllocation[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -210,6 +213,23 @@ model SubjectGrade {
 
   @@id([subjectId, gradeId])
   @@map("subject_grades")
+}
+
+model SubjectAllocation {
+  id        String @id @default(cuid())
+  tenantId  String
+  subjectId String
+  sectionId String
+  staffId   String
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  section   Section @relation(fields: [sectionId], references: [id])
+  staff     Staff   @relation(fields: [staffId], references: [id])
+
+  @@unique([tenantId, subjectId, sectionId])
+  @@index([tenantId, sectionId])
+  @@index([tenantId, staffId])
+  @@map("subject_allocations")
 }
 
 // ─── STAFF & STUDENTS ──────────────────────────────────────────────────────
@@ -229,6 +249,7 @@ model Staff {
   user              User               @relation(fields: [userId], references: [id])
   timetableSlots    TimetableSlot[]
   attendanceRecords AttendanceRecord[] @relation("TeacherAttendance")
+  subjectAllocations SubjectAllocation[]
 
   @@unique([tenantId, employeeId])
   @@index([tenantId])
@@ -619,6 +640,37 @@ model Announcement {
   @@map("announcements")
 }
 
+// ─── EVENTS & CALENDAR ─────────────────────────────────────────────────────
+model Event {
+  id          String    @id @default(cuid())
+  tenantId    String
+  title       String
+  description String?
+  eventType   EventType
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean   @default(true)
+  targetRoles Json      @default("[]") // ["STUDENT","TEACHER","STAFF","ALL"]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, startDate])
+  @@map("events")
+}
+
+enum EventType {
+  PARENT_TEACHER_MEETING
+  RESULT_DECLARATION
+  ANNUAL_DAY
+  SESSIONAL_EXAM
+  HOLIDAY
+  SPORTS_DAY
+  OTHER
+}
+
+
 // ─── GAMIFICATION ──────────────────────────────────────────────────────────
 model Gamification {
   id        String   @id @default(cuid())
@@ -991,3 +1043,5 @@ enum ReviewDecision {
   WAITLIST
   ESCALATE
 }
+
+

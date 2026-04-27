@@ -58,7 +58,7 @@ export default function ApplicationDetailModal({ application, sections, onClose 
 
     setLoading(true);
     try {
-      await fetch(`/api/admissions/applications/${application.id}`, {
+      const res = await fetch(`/api/admissions/applications/${application.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
