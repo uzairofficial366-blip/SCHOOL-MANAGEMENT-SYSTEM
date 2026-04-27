@@ -27,28 +27,47 @@ export default async function TeacherClasses() {
     orderBy: { startTime: 'asc' }
   });
 
-  // 2. Sections
-  const teacherSections = await prisma.timetableSlot.findMany({
+  // 2. All assigned sections (Class Teacher or Subject Teacher)
+  const sectionsAsClassTeacher = await prisma.section.findMany({
+    where: { tenantId, classTeacherId: staff.id, deletedAt: null },
+    select: { id: true }
+  });
+
+  const sectionsAsSubjectTeacher = await prisma.subjectAllocation.findMany({
     where: { tenantId, staffId: staff.id },
     select: { sectionId: true },
     distinct: ['sectionId']
   });
-  const sectionIds = teacherSections.map(s => s.sectionId);
+
+  const allSectionIds = Array.from(new Set([
+    ...sectionsAsClassTeacher.map(s => s.id),
+    ...sectionsAsSubjectTeacher.map(s => s.sectionId)
+  ]));
 
   const roster = await prisma.section.findMany({
-    where: { id: { in: sectionIds } },
+    where: { id: { in: allSectionIds } },
     include: {
       grade: true,
       enrollments: {
         where: { status: "ACTIVE" },
+      },
+      subjectAllocations: {
+        where: { staffId: staff.id },
+        include: { subject: true }
       }
     }
   });
 
   return (
     <>
-      <Topbar title="My Classes" />
-      <TeacherClassesClient classesToday={classesToday} roster={roster} />
+      <Topbar title="My Assigned Classes" />
+      <div className="page-body fade-up">
+        <TeacherClassesClient 
+          classesToday={classesToday} 
+          roster={roster} 
+          staffId={staff.id}
+        />
+      </div>
     </>
   );
 }

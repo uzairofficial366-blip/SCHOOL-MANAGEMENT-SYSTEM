@@ -41,7 +41,12 @@ export async function GET(req: NextRequest) {
     const slots = await prisma.timetableSlot.findMany({
       where: whereClause,
       include: {
-        section: { include: { grade: true } },
+        section: { 
+          include: { 
+            grade: true,
+            classTeacher: { include: { user: { select: { name: true } } } }
+          } 
+        },
         subject: true,
         staff: { include: { user: true } }
       },

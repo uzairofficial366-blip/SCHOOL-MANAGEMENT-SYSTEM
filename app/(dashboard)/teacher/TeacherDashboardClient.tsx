@@ -87,6 +87,28 @@ export default function TeacherDashboardClient({
 
         <div className="card" style={{ gridColumn: "span 2" }}>
           <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Clock size={18} className="text-primary" /> Classes Today
+          </h3>
+          {classesToday?.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {classesToday.map((slot: any) => (
+                <div key={slot.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem", borderRadius: "8px", border: "1px solid hsl(var(--border))" }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.9rem", width: "100px" }}>{slot.startTime} - {slot.endTime}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>{slot.subject.name}</div>
+                    <div style={{ fontSize: "0.8rem", color: "hsl(var(--text-muted))" }}>{slot.section.grade.name} - {slot.section.name} • Room: {slot.room || "TBA"}</div>
+                  </div>
+                  <a href="/teacher/timetable" className="btn btn-sm btn-ghost">Timetable</a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: "hsl(var(--text-muted))", textAlign: "center", padding: "2rem" }}>No classes for today</p>
+          )}
+        </div>
+
+        <div className="card">
+          <h3 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <AlertCircle size={18} className="text-warning" /> Announcements
           </h3>
           {announcements?.length > 0 ? (

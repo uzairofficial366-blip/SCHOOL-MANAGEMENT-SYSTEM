@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 interface NavItem {
   label: string;
@@ -33,11 +33,16 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       { label: "Classes & Sections", href: "/admin/sections", icon: "🏛️" },
       { label: "Subjects", href: "/admin/subjects", icon: "📚" },
       { label: "Timetable", href: "/admin/timetable", icon: "🗓️" },
+      { label: "Class Assignment", href: "/admin/assignments", icon: "🤝" },
       { label: "Results", href: "/admin/results", icon: "📄" },
     ]},
     { section: "People", items: [
       { label: "Students", href: "/admin/students", icon: "🎓" },
       { label: "Staff", href: "/admin/staff", icon: "👥" },
+    ]},
+    { section: "Finance", items: [
+      { label: "Fee Management", href: "/admin/fees", icon: "💳" },
+      { label: "Salary Management", href: "/admin/salary", icon: "💰" },
     ]},
     { section: "Communication", items: [
       { label: "Announcements", href: "/admin/announcements", icon: "📢" },
@@ -95,9 +100,10 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
     { section: "Overview", items: [{ label: "Dashboard", href: "/accountant", icon: "⊞" }] },
     { section: "Finance", items: [
       { label: "Fee Structures", href: "/accountant/fee-structures", icon: "📋" },
+      { label: "Student Fees", href: "/admin/fees", icon: "💳" },
+      { label: "Salary", href: "/admin/salary", icon: "💰" },
       { label: "Payments", href: "/accountant/payments", icon: "💳" },
       { label: "Concessions", href: "/accountant/concessions", icon: "🏷️" },
-      { label: "Payroll", href: "/accountant/payroll", icon: "💰" },
       { label: "Reports", href: "/accountant/reports", icon: "📊" },
     ]},
     { section: "Communication", items: [
@@ -202,13 +208,9 @@ export default function Sidebar({ role, userName, userEmail, avatarInitials, ten
             {userEmail}
           </div>
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          title="Sign out"
-          style={{ background: "none", border: "none", cursor: "pointer", color: "hsl(0 0% 100% / 0.4)", fontSize: "1rem", flexShrink: 0 }}
-        >
-          ⏻
-        </button>
+        <LogoutButton
+          style={{ color: "hsl(0 0% 100% / 0.4)", fontSize: "1rem", flexShrink: 0 }}
+        />
       </div>
     </aside>
   );

@@ -2,7 +2,7 @@
 
 import { User, BookOpen, AlertTriangle } from "lucide-react";
 
-export default function TeacherClassesClient({ classesToday, roster }: any) {
+export default function TeacherClassesClient({ classesToday, roster, staffId }: any) {
   return (
     <div className="page-body fade-up" style={{ padding: "1.5rem 2rem" }}>
       <div style={{ marginBottom: "2rem" }}>
@@ -32,21 +32,47 @@ export default function TeacherClassesClient({ classesToday, roster }: any) {
           {/* Class Cards */}
           <h3 style={{ fontSize: "1.25rem", fontWeight: 800 }}>My Sections</h3>
           <div className="grid-3">
-            {roster?.map((section: any) => (
-              <div key={section.id} className="card" style={{ position: "relative", overflow: "hidden", borderTop: "4px solid hsl(var(--primary))" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
-                  <h4 style={{ fontWeight: 800, fontSize: "1.2rem" }}>{section.grade.name} - {section.name}</h4>
-                  <span className="badge badge-info">{section.enrollments.length} Students</span>
+            {roster?.map((section: any) => {
+              const isClassTeacher = section.classTeacherId === staffId;
+              return (
+                <div key={section.id} className="card" style={{ position: "relative", overflow: "hidden", borderTop: "4px solid hsl(var(--primary))" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", alignItems: "flex-start" }}>
+                    <div>
+                      <h4 style={{ fontWeight: 800, fontSize: "1.2rem" }}>{section.grade.name} - {section.name}</h4>
+                      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                        {isClassTeacher && <span className="badge" style={{ background: "hsl(var(--success)/0.1)", color: "hsl(var(--success))", fontSize: "0.7rem" }}>Class Teacher</span>}
+                        <span className="badge badge-info" style={{ fontSize: "0.7rem" }}>{section.enrollments.length} Students</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginTop: "1rem", marginBottom: "1.5rem" }}>
+                    <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "hsl(var(--text-muted))", marginBottom: "0.25rem" }}>TEACHING SUBJECTS:</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                      {section.subjectAllocations.map((a: any) => (
+                        <span key={a.id} className="badge" style={{ background: "hsl(var(--primary)/0.1)", color: "hsl(var(--primary))", fontSize: "0.75rem" }}>
+                          {a.subject.name}
+                        </span>
+                      ))}
+                      {section.subjectAllocations.length === 0 && !isClassTeacher && (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>No subjects assigned</span>
+                      )}
+                      {section.subjectAllocations.length === 0 && isClassTeacher && (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", fontStyle: "italic" }}>Admin role only</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: "0.9rem", color: "hsl(var(--text-muted))", marginBottom: "1.5rem" }}>
+                    Room: <strong>{section.roomNumber || section.room || "TBA"}</strong>
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <a href={`/teacher/attendance?sectionId=${section.id}`} className="btn btn-sm btn-ghost" style={{ flex: 1 }}><User size={14} /> Attendance</a>
+                    <a href={`/teacher/gradebook?sectionId=${section.id}`} className="btn btn-sm btn-ghost" style={{ flex: 1 }}><BookOpen size={14} /> Grades</a>
+                  </div>
                 </div>
-                <p style={{ fontSize: "0.9rem", color: "hsl(var(--text-muted))", marginBottom: "1.5rem" }}>
-                  Room: <strong>{section.room || "TBA"}</strong>
-                </p>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <a href="/teacher/attendance" className="btn btn-sm btn-ghost" style={{ flex: 1 }}><User size={14} /> Attendance</a>
-                  <a href="/teacher/gradebook" className="btn btn-sm btn-ghost" style={{ flex: 1 }}><BookOpen size={14} /> Grades</a>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {(!roster || roster.length === 0) && <p style={{ color: "hsl(var(--text-muted))" }}>No sections assigned.</p>}
           </div>
 

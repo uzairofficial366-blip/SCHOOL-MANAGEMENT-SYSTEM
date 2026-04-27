@@ -100,14 +100,84 @@ async function main() {
     userMap[r.email] = u.id;
   }
 
-  // STAFF — clear first to avoid employeeId conflicts on re-run
-  await prisma.staff.deleteMany({ where: { tenantId: tid } });
-  const staff1 = await prisma.staff.create({
-    data: { tenantId: tid, userId: userMap["teacher1@demo-school.edu"], employeeId: "EMP-001", department: "Mathematics", designation: "Senior Teacher", salary: 75000 },
+  const staff1 = await prisma.staff.upsert({
+    where: { tenantId_employeeId: { tenantId: tid, employeeId: "EMP-001" } },
+    update: {
+      userId: userMap["teacher1@demo-school.edu"],
+      department: "Mathematics",
+      designation: "Senior Teacher",
+      salary: 75000,
+    },
+    create: {
+      tenantId: tid,
+      userId: userMap["teacher1@demo-school.edu"],
+      employeeId: "EMP-001",
+      department: "Mathematics",
+      designation: "Senior Teacher",
+      salary: 75000,
+    },
   });
-  const staff2 = await prisma.staff.create({
-    data: { tenantId: tid, userId: userMap["teacher2@demo-school.edu"], employeeId: "EMP-002", department: "Science", designation: "Teacher", salary: 65000 },
+  const staff2 = await prisma.staff.upsert({
+    where: { tenantId_employeeId: { tenantId: tid, employeeId: "EMP-002" } },
+    update: {
+      userId: userMap["teacher2@demo-school.edu"],
+      department: "Science",
+      designation: "Teacher",
+      salary: 65000,
+    },
+    create: {
+      tenantId: tid,
+      userId: userMap["teacher2@demo-school.edu"],
+      employeeId: "EMP-002",
+      department: "Science",
+      designation: "Teacher",
+      salary: 65000,
+    },
   });
+
+  await prisma.salaryPayment.deleteMany({ where: { tenantId: tid } });
+  const salaryMonths = [
+    new Date("2026-01-01"),
+    new Date("2026-02-01"),
+    new Date("2026-03-01"),
+    new Date("2026-04-01"),
+  ];
+  for (const [index, month] of salaryMonths.entries()) {
+    const teacher1Paid = index < 3;
+    const teacher2Paid = index < 2;
+
+    await prisma.salaryPayment.create({
+      data: {
+        tenantId: tid,
+        staffId: staff1.id,
+        salaryMonth: month,
+        grossAmount: 75000,
+        deductions: 1500,
+        bonus: index === 1 ? 2500 : 0,
+        amountPaid: teacher1Paid ? (index === 1 ? 76000 : 73500) : 0,
+        paymentDate: teacher1Paid ? new Date(month.getFullYear(), month.getMonth(), 28) : null,
+        method: teacher1Paid ? "BANK_TRANSFER" : null,
+        transactionId: teacher1Paid ? `SAL-EMP-001-${month.getMonth() + 1}` : null,
+        status: teacher1Paid ? "PAID" : "PENDING",
+      },
+    }).catch(() => {});
+
+    await prisma.salaryPayment.create({
+      data: {
+        tenantId: tid,
+        staffId: staff2.id,
+        salaryMonth: month,
+        grossAmount: 65000,
+        deductions: 1000,
+        bonus: index === 0 ? 1500 : 0,
+        amountPaid: teacher2Paid ? (index === 0 ? 65500 : 64000) : 0,
+        paymentDate: teacher2Paid ? new Date(month.getFullYear(), month.getMonth(), 27) : null,
+        method: teacher2Paid ? "BANK_TRANSFER" : null,
+        transactionId: teacher2Paid ? `SAL-EMP-002-${month.getMonth() + 1}` : null,
+        status: teacher2Paid ? "PAID" : "PENDING",
+      },
+    }).catch(() => {});
+  }
 
   // SECTIONS
   const sec8A = await prisma.section.upsert({

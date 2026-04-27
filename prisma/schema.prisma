@@ -172,6 +172,7 @@ model Section {
 
   grade             Grade              @relation(fields: [gradeId], references: [id])
   academicYear      AcademicYear       @relation(fields: [academicYearId], references: [id])
+  classTeacher      Staff?             @relation("ClassTeacher", fields: [classTeacherId], references: [id])
   enrollments       Enrollment[]
   timetableSlots    TimetableSlot[]
   attendanceRecords AttendanceRecord[]
@@ -250,6 +251,8 @@ model Staff {
   timetableSlots    TimetableSlot[]
   attendanceRecords AttendanceRecord[] @relation("TeacherAttendance")
   subjectAllocations SubjectAllocation[]
+  sectionsAsClassTeacher Section[] @relation("ClassTeacher")
+  salaryPayments    SalaryPayment[]
 
   @@unique([tenantId, employeeId])
   @@index([tenantId])
@@ -561,6 +564,29 @@ model FeePayment {
   @@index([tenantId, status])
   @@index([tenantId, dueDate])
   @@map("fee_payments")
+}
+
+model SalaryPayment {
+  id            String        @id @default(cuid())
+  tenantId      String
+  staffId       String
+  salaryMonth   DateTime      @db.Date
+  grossAmount   Decimal       @db.Decimal(12, 2)
+  deductions    Decimal       @default(0) @db.Decimal(10, 2)
+  bonus         Decimal       @default(0) @db.Decimal(10, 2)
+  amountPaid    Decimal       @db.Decimal(12, 2)
+  paymentDate   DateTime?
+  method        PaymentMethod?
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@unique([tenantId, staffId, salaryMonth])
+  @@index([tenantId, staffId])
+  @@index([tenantId, status])
+  @@map("salary_payments")
 }
 
 enum FeeFrequency {
@@ -1043,5 +1069,4 @@ enum ReviewDecision {
   WAITLIST
   ESCALATE
 }
-
 

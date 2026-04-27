@@ -49,6 +49,18 @@ export default async function TeacherDashboard() {
     take: 5
   });
 
+  // Classes Today
+  const dayOfWeek = new Date().getDay() - 1; // 0=Mon
+  const classesToday = await prisma.timetableSlot.findMany({
+    where: { 
+      tenantId, 
+      staffId: staff.id, 
+      dayOfWeek: dayOfWeek >= 0 && dayOfWeek <= 5 ? dayOfWeek : -1 
+    },
+    include: { section: { include: { grade: true } }, subject: true },
+    orderBy: { startTime: 'asc' }
+  });
+
   return (
     <>
       <Topbar title="Teacher Dashboard" />
@@ -56,6 +68,7 @@ export default async function TeacherDashboard() {
         staff={staff}
         pendingGrades={pendingGrades}
         announcements={announcements}
+        classesToday={classesToday}
         tenantId={tenantId}
       />
     </>

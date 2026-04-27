@@ -11,7 +11,11 @@ interface TimetableSlot {
   startTime: string;
   endTime: string;
   room: string | null;
-  section: { name: string; grade: { name: string } };
+  section: { 
+    name: string; 
+    grade: { name: string };
+    classTeacher?: { user: { name: string } } | null;
+  };
   subject: { name: string; code: string };
   staff: { user: { name: string } };
 }
@@ -75,8 +79,18 @@ export default function TimetableGrid({ slots, onDeleteSlot, isAdmin }: Props) {
                         }}>
                           <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "hsl(var(--primary))" }}>{slot.subject.name}</div>
                           <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{slot.section.grade.name} - {slot.section.name}</div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Prof. {slot.staff.user.name}</div>
-                          <div style={{ fontSize: "0.7rem", marginTop: "0.2rem", fontWeight: 600 }}>{slot.startTime} - {slot.endTime} {slot.room && `| Rm: ${slot.room}`}</div>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>{slot.staff.user.name}</div>
+                          
+                          {/* Class Teacher Info */}
+                          {slot.section.classTeacher && (
+                            <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginTop: "0.1rem", borderTop: "1px solid hsl(var(--primary)/0.1)", paddingTop: "0.1rem" }}>
+                              CT: {slot.section.classTeacher.user.name}
+                            </div>
+                          )}
+
+                          <div style={{ fontSize: "0.7rem", marginTop: "0.2rem", fontWeight: 600 }}>
+                            {slot.startTime} - {slot.endTime} {slot.room && `| Rm: ${slot.room}`}
+                          </div>
                           
                           {isAdmin && onDeleteSlot && (
                             <button 
