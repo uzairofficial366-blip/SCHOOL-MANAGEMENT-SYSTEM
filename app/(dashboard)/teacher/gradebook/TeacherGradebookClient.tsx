@@ -1,181 +1,663 @@
 "use client";
 
-import { useState } from "react";
-import { Settings, Download, FileText, Table as TableIcon } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { useEffect, useState } from "react";
 
-export default function TeacherGradebookClient({ roster }: any) {
-  // Using a flat list for demonstration; in reality, you'd filter by selected section.
-  const allStudents = roster?.flatMap((sec: any) => 
-    sec.enrollments.map((e: any) => ({
-      id: e.student.id,
-      name: e.student.user.name,
-      initials: e.student.user.name.substring(0, 2).toUpperCase(),
-      scores: { exam: 0, quiz: 0, homework: 0 }
-    }))
-  ) || [];
+interface SubjectOption {
+  subjectId: string;
+  subjectName: string;
+  subjectCode: string;
+}
 
-  const [students, setStudents] = useState(allStudents);
+interface SectionOption {
+  sectionId: string;
+  gradeId: string;
+  gradeName: string;
+  sectionName: string;
+  label: string;
+  academicYearId: string;
+  subjects: SubjectOption[];
+}
 
-  const handleScoreChange = (id: string, field: keyof typeof students[0]['scores'], value: string) => {
-    const numVal = Math.min(100, Math.max(0, Number(value) || 0));
-    setStudents((prev: any[]) => prev.map(s => {
-      if (s.id === id) {
-        return { ...s, scores: { ...s.scores, [field]: numVal } };
+interface ExamScheduleOption {
+  id: string;
+  name: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface GridRow {
+  studentId: string;
+  gradeRecordId: string | null;
+  studentName: string;
+  admissionNo: string;
+  rollNo: number | null;
+  marksObtained: number | null;
+  remarks: string;
+}
+
+interface EditableRow extends GridRow {
+  marksInput: string;
+}
+
+const DEFAULT_RUBRIC = {
+  totalMarks: 100,
+  passingMarks: 40,
+};
+
+function getPercentage(marksInput: string, totalMarks: number) {
+  const marks = Number(marksInput);
+  if (!marksInput || !Number.isFinite(marks) || totalMarks <= 0) {
+    return "";
+  }
+
+  return ((marks / totalMarks) * 100).toFixed(1);
+}
+
+function getStatus(marksInput: string, passingMarks: number) {
+  const marks = Number(marksInput);
+  if (!marksInput || !Number.isFinite(marks)) {
+    return {
+      label: "Pending",
+      color: "#64748b",
+      background: "rgba(100, 116, 139, 0.12)",
+    };
+  }
+
+  if (marks >= passingMarks) {
+    return {
+      label: "Pass",
+      color: "#15803d",
+      background: "rgba(22, 163, 74, 0.12)",
+    };
+  }
+
+  return {
+    label: "Fail",
+    color: "#b91c1c",
+    background: "rgba(220, 38, 38, 0.12)",
+  };
+}
+
+function formatExamScheduleLabel(schedule: ExamScheduleOption) {
+  return `${schedule.name} (${schedule.type})`;
+}
+
+export default function TeacherGradebookClient({
+  initialSections,
+  initialExamSchedules,
+}: {
+  initialSections: SectionOption[];
+  initialExamSchedules: ExamScheduleOption[];
+}) {
+  const [selectedSectionId, setSelectedSectionId] = useState(
+    initialSections.length === 1 ? initialSections[0].sectionId : ""
+  );
+  const [selectedSubjectId, setSelectedSubjectId] = useState(
+    initialSections.length === 1 && initialSections[0].subjects.length === 1
+      ? initialSections[0].subjects[0].subjectId
+      : ""
+  );
+  const [selectedExamScheduleId, setSelectedExamScheduleId] = useState("");
+  const [subjects, setSubjects] = useState<SubjectOption[]>(
+    initialSections.length === 1 ? initialSections[0].subjects : []
+  );
+  const [rows, setRows] = useState<EditableRow[]>([]);
+  const [rubric, setRubric] = useState(DEFAULT_RUBRIC);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [subjectAutoSelected, setSubjectAutoSelected] = useState(false);
+
+  const selectedSection =
+    initialSections.find((section) => section.sectionId === selectedSectionId) ?? null;
+  const selectedSubject =
+    subjects.find((subject) => subject.subjectId === selectedSubjectId) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadGrid() {
+      if (!selectedSectionId) {
+        setSubjects([]);
+        setRows([]);
+        setRubric(DEFAULT_RUBRIC);
+        setSubjectAutoSelected(false);
+        return;
       }
-      return s;
-    }));
-  };
 
-  const getAverageAndStatus = (scores: any) => {
-    const avg = (scores.exam * 0.4) + (scores.quiz * 0.3) + (scores.homework * 0.3);
-    const status = avg >= 90 ? { text: "Excellent", class: "badge-success" }
-                 : avg >= 75 ? { text: "Good", class: "badge-info" }
-                 : avg >= 50 ? { text: "Pass", class: "badge-warning" }
-                 : { text: "Needs Help", class: "badge-danger" };
-    return { avg: avg.toFixed(1), status };
-  };
+      setLoading(true);
+      setError("");
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Class Gradebook Report", 14, 15);
-    
-    const tableData = students.map((s: any) => {
-      const { avg, status } = getAverageAndStatus(s.scores);
-      return [s.name, s.scores.exam, s.scores.quiz, s.scores.homework, avg, status.text];
-    });
+      try {
+        const params = new URLSearchParams({ sectionId: selectedSectionId });
+        if (selectedSubjectId) params.set("subjectId", selectedSubjectId);
+        if (selectedExamScheduleId) params.set("examScheduleId", selectedExamScheduleId);
 
-    autoTable(doc, {
-      head: [['Student Name', 'Exam (40%)', 'Quiz (30%)', 'Homework (30%)', 'Final Average', 'Status']],
-      body: tableData,
-      startY: 25,
-    });
-    
-    doc.save("gradebook_report.pdf");
-  };
+        const res = await fetch(`/api/results/teacher?${params.toString()}`);
+        const data = await res.json();
 
-  const exportExcel = () => {
-    const worksheetData = students.map((s: any) => {
-      const { avg, status } = getAverageAndStatus(s.scores);
-      return {
-        "Student Name": s.name,
-        "Exam (40%)": s.scores.exam,
-        "Quiz (30%)": s.scores.quiz,
-        "Homework (30%)": s.scores.homework,
-        "Final Average": avg,
-        "Status": status.text
+        if (cancelled) {
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load gradebook");
+        }
+
+        setSubjects(data.subjects || []);
+
+        if (data.autoSelectedSubjectId && data.autoSelectedSubjectId !== selectedSubjectId) {
+          setSelectedSubjectId(data.autoSelectedSubjectId);
+          setSubjectAutoSelected(true);
+        } else if (!data.autoSelectedSubjectId) {
+          setSubjectAutoSelected(false);
+        }
+
+        if (data.grid) {
+          setRows(
+            (data.grid.rows || []).map((row: GridRow) => ({
+              ...row,
+              marksInput:
+                row.marksObtained === null || row.marksObtained === undefined
+                  ? ""
+                  : String(row.marksObtained),
+            }))
+          );
+          setRubric({
+            totalMarks: Number(data.grid.rubric?.totalMarks ?? DEFAULT_RUBRIC.totalMarks),
+            passingMarks: Number(data.grid.rubric?.passingMarks ?? DEFAULT_RUBRIC.passingMarks),
+          });
+        } else {
+          setRows([]);
+          setRubric(DEFAULT_RUBRIC);
+        }
+      } catch (loadError: any) {
+        if (!cancelled) {
+          setError(loadError.message || "Failed to load gradebook");
+          setRows([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadGrid();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSectionId, selectedSubjectId, selectedExamScheduleId]);
+
+  const enteredRows = rows.filter((row) => row.marksInput.trim() !== "");
+  const existingRows = rows.filter((row) => row.gradeRecordId);
+  const canSave =
+    !!selectedSectionId &&
+    !!selectedSubjectId &&
+    !!selectedExamScheduleId &&
+    enteredRows.length > 0 &&
+    !loading &&
+    !saving;
+
+  async function reloadCurrentContext() {
+    const params = new URLSearchParams({ sectionId: selectedSectionId });
+    if (selectedSubjectId) params.set("subjectId", selectedSubjectId);
+    if (selectedExamScheduleId) params.set("examScheduleId", selectedExamScheduleId);
+
+    const res = await fetch(`/api/results/teacher?${params.toString()}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to refresh gradebook");
+    }
+
+    setSubjects(data.subjects || []);
+    if (data.grid) {
+      setRows(
+        (data.grid.rows || []).map((row: GridRow) => ({
+          ...row,
+          marksInput:
+            row.marksObtained === null || row.marksObtained === undefined
+              ? ""
+              : String(row.marksObtained),
+        }))
+      );
+      setRubric({
+        totalMarks: Number(data.grid.rubric?.totalMarks ?? DEFAULT_RUBRIC.totalMarks),
+        passingMarks: Number(data.grid.rubric?.passingMarks ?? DEFAULT_RUBRIC.passingMarks),
+      });
+    } else {
+      setRows([]);
+    }
+  }
+
+  function updateRow(studentId: string, patch: Partial<EditableRow>) {
+    setRows((currentRows) =>
+      currentRows.map((row) => (row.studentId === studentId ? { ...row, ...patch } : row))
+    );
+  }
+
+  function handleSectionChange(sectionId: string) {
+    setSelectedSectionId(sectionId);
+    setSelectedSubjectId("");
+    setSelectedExamScheduleId("");
+    setRows([]);
+    setRubric(DEFAULT_RUBRIC);
+    setError("");
+    setSuccess("");
+    setSubjectAutoSelected(false);
+    const section = initialSections.find((entry) => entry.sectionId === sectionId);
+    setSubjects(section?.subjects ?? []);
+  }
+
+  async function handleSave() {
+    if (!selectedSection || !selectedSubjectId || !selectedExamScheduleId) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const payload = {
+        gradeId: selectedSection.gradeId,
+        sectionId: selectedSection.sectionId,
+        subjectId: selectedSubjectId,
+        examScheduleId: selectedExamScheduleId,
+        totalMarks: rubric.totalMarks,
+        passingMarks: rubric.passingMarks,
+        records: enteredRows.map((row) => ({
+          studentId: row.studentId,
+          marksObtained: Number(row.marksInput),
+          remarks: row.remarks.trim() || null,
+        })),
       };
-    });
 
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Grades");
-    XLSX.writeFile(workbook, "gradebook_export.xlsx");
-  };
+      const res = await fetch("/api/results/teacher", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save results");
+      }
+
+      await reloadCurrentContext();
+      setSuccess(`${data.count} result(s) saved for ${selectedSection.label} - ${selectedSubject?.subjectName}.`);
+    } catch (saveError: any) {
+      setError(saveError.message || "Failed to save results");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="page-body fade-up" style={{ padding: "1.5rem 2rem" }}>
-      <div className="card flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-2xl font-extrabold">Robust Gradebook</h3>
-          <p className="text-muted-foreground">Automated calculations, custom scales, and flagging.</p>
+      <div className="card" style={{ marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "1rem",
+            flexWrap: "wrap",
+            marginBottom: "1rem",
+          }}
+        >
+          <div>
+            <h3 style={{ fontSize: "1.45rem", fontWeight: 800, marginBottom: "0.35rem" }}>
+              Teacher Results Entry
+            </h3>
+            <p style={{ color: "hsl(var(--text-muted))", maxWidth: "780px" }}>
+              Only your assigned class, section, and subject combinations are available here.
+              Select the class context first, then enter or update marks for that exact cohort.
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!canSave}>
+            {saving
+              ? "Saving..."
+              : existingRows.length > 0
+                ? "Update Results"
+                : "Save Results"}
+          </button>
         </div>
-        <div className="flex gap-4">
-          <button className="btn btn-ghost"><Settings size={18} /> Grading Weights</button>
-          <div className="flex bg-primary rounded-lg overflow-hidden text-white shadow-lg">
-            <button onClick={exportPDF} className="px-4 py-2 hover:bg-primary-dark transition-colors flex items-center gap-2 border-r border-white/20">
-              <FileText size={18} /> PDF
-            </button>
-            <button onClick={exportExcel} className="px-4 py-2 hover:bg-primary-dark transition-colors flex items-center gap-2">
-              <TableIcon size={18} /> Excel
-            </button>
+
+        {error && (
+          <div
+            style={{
+              padding: "0.75rem 1rem",
+              borderRadius: "8px",
+              marginBottom: "1rem",
+              background: "rgba(220, 38, 38, 0.1)",
+              color: "#b91c1c",
+              fontWeight: 600,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            style={{
+              padding: "0.75rem 1rem",
+              borderRadius: "8px",
+              marginBottom: "1rem",
+              background: "rgba(22, 163, 74, 0.1)",
+              color: "#15803d",
+              fontWeight: 600,
+            }}
+          >
+            {success}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.35rem",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Class & Section
+            </label>
+            <select
+              className="form-input"
+              value={selectedSectionId}
+              onChange={(event) => handleSectionChange(event.target.value)}
+            >
+              <option value="">Select assigned class</option>
+              {initialSections.map((section) => (
+                <option key={section.sectionId} value={section.sectionId}>
+                  {section.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.35rem",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Subject
+            </label>
+            <select
+              className="form-input"
+              value={selectedSubjectId}
+              onChange={(event) => {
+                setSelectedSubjectId(event.target.value);
+                setError("");
+                setSuccess("");
+              }}
+              disabled={!selectedSectionId || subjects.length === 0}
+            >
+              <option value="">
+                {selectedSectionId ? "Select assigned subject" : "Select class first"}
+              </option>
+              {subjects.map((subject) => (
+                <option key={subject.subjectId} value={subject.subjectId}>
+                  {subject.subjectName} ({subject.subjectCode})
+                </option>
+              ))}
+            </select>
+            {subjectAutoSelected && selectedSubject && (
+              <div style={{ marginTop: "0.4rem", fontSize: "0.78rem", color: "hsl(var(--text-muted))" }}>
+                {selectedSubject.subjectName} was auto-selected because this is your only assigned subject for the chosen class.
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.35rem",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Term / Exam
+            </label>
+            <select
+              className="form-input"
+              value={selectedExamScheduleId}
+              onChange={(event) => {
+                setSelectedExamScheduleId(event.target.value);
+                setError("");
+                setSuccess("");
+              }}
+            >
+              <option value="">Select assessment period</option>
+              {initialExamSchedules.map((schedule) => (
+                <option key={schedule.id} value={schedule.id}>
+                  {formatExamScheduleLabel(schedule)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "1rem",
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.35rem",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Total Marks
+            </label>
+            <input
+              type="number"
+              className="form-input"
+              min={1}
+              value={rubric.totalMarks}
+              onChange={(event) =>
+                setRubric((current) => ({
+                  ...current,
+                  totalMarks: Math.max(1, Number(event.target.value) || 1),
+                }))
+              }
+            />
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.35rem",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+            >
+              Pass Marks
+            </label>
+            <input
+              type="number"
+              className="form-input"
+              min={0}
+              max={rubric.totalMarks}
+              value={rubric.passingMarks}
+              onChange={(event) =>
+                setRubric((current) => ({
+                  ...current,
+                  passingMarks: Math.max(
+                    0,
+                    Math.min(current.totalMarks, Number(event.target.value) || 0)
+                  ),
+                }))
+              }
+            />
+          </div>
+
+          <div style={{ color: "hsl(var(--text-muted))", fontSize: "0.82rem" }}>
+            {selectedSection && selectedSubject ? (
+              <span>
+                Enter marks for <strong>{selectedSection.label}</strong> in{" "}
+                <strong>{selectedSubject.subjectName}</strong>. Percentage and pass/fail update as you type.
+              </span>
+            ) : (
+              <span>Select a class and subject to load the roster.</span>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="card glass">
-        <div className="flex gap-4 mb-6 items-center">
-          <select className="form-input w-64">
-            <option>Select Section</option>
-            {roster?.map((s: any) => <option key={s.id}>{s.grade.name} - {s.name}</option>)}
-          </select>
-          <select className="form-input w-64">
-            <option>Percentage Scale (0-100)</option>
-            <option>Letter Grades (A-F)</option>
-          </select>
-        </div>
-        
-        <div className="table-wrapper">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr>
-                <th className="p-4 border-b">Student Name</th>
-                <th className="p-4 border-b w-32">Exam (40%)</th>
-                <th className="p-4 border-b w-32">Quiz (30%)</th>
-                <th className="p-4 border-b w-32">Homework (30%)</th>
-                <th className="p-4 border-b w-32">Final Average</th>
-                <th className="p-4 border-b w-32">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s: any) => {
-                const { avg, status } = getAverageAndStatus(s.scores);
-                const isFailing = Number(avg) < 50;
+      <div className="card">
+        {loading ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--text-muted))" }}>
+            Loading assigned roster...
+          </div>
+        ) : !selectedSectionId ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--text-muted))" }}>
+            Select one of your assigned classes to begin grading.
+          </div>
+        ) : !selectedSubjectId ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--text-muted))" }}>
+            Select the subject you are grading for this class.
+          </div>
+        ) : rows.length === 0 ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--text-muted))" }}>
+            No active students are enrolled in this class section.
+          </div>
+        ) : (
+          <>
+            {!selectedExamScheduleId && (
+              <div
+                style={{
+                  marginBottom: "1rem",
+                  padding: "0.85rem 1rem",
+                  borderRadius: "8px",
+                  background: "rgba(245, 158, 11, 0.12)",
+                  color: "#b45309",
+                  fontWeight: 600,
+                }}
+              >
+                Select a term or exam period before saving. The roster is shown now so you can prepare marks entry in context.
+              </div>
+            )}
 
-                return (
-                  <tr key={s.id} className="hover:bg-primary/5 transition-colors">
-                    <td className="p-4 border-b">
-                      <div className="flex items-center gap-3">
-                        <div className={`avatar w-8 h-8 text-xs ${isFailing ? 'bg-danger text-white' : ''}`}>
-                          {s.initials}
-                        </div>
-                        <strong className="text-sm">{s.name}</strong>
-                      </div>
-                    </td>
-                    <td className="p-4 border-b">
-                      <input 
-                        type="number" 
-                        className={`form-input w-20 p-1 text-center ${s.scores.exam < 50 ? 'border-danger text-danger' : ''}`} 
-                        value={s.scores.exam} 
-                        onChange={(e) => handleScoreChange(s.id, 'exam', e.target.value)}
-                        min={0} max={100}
-                      />
-                    </td>
-                    <td className="p-4 border-b">
-                      <input 
-                        type="number" 
-                        className={`form-input w-20 p-1 text-center ${s.scores.quiz < 50 ? 'border-danger text-danger' : ''}`} 
-                        value={s.scores.quiz} 
-                        onChange={(e) => handleScoreChange(s.id, 'quiz', e.target.value)}
-                        min={0} max={100}
-                      />
-                    </td>
-                    <td className="p-4 border-b">
-                      <input 
-                        type="number" 
-                        className={`form-input w-20 p-1 text-center ${s.scores.homework < 50 ? 'border-danger text-danger' : ''}`} 
-                        value={s.scores.homework} 
-                        onChange={(e) => handleScoreChange(s.id, 'homework', e.target.value)}
-                        min={0} max={100}
-                      />
-                    </td>
-                    <td className="p-4 border-b">
-                      <strong className={`text-lg ${isFailing ? 'text-danger' : ''}`}>{avg}%</strong>
-                    </td>
-                    <td className="p-4 border-b">
-                      <span className={`badge ${status.class}`}>{status.text}</span>
-                    </td>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "hsl(var(--bg))" }}>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "left", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Student
+                    </th>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "left", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Roll No.
+                    </th>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "center", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Marks
+                    </th>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "center", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Percentage
+                    </th>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "center", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Status
+                    </th>
+                    <th style={{ padding: "0.9rem 1rem", textAlign: "left", borderBottom: "1px solid hsl(var(--border))" }}>
+                      Remarks
+                    </th>
                   </tr>
-                );
-              })}
-              {students.length === 0 && (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No students found.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const percentage = getPercentage(row.marksInput, rubric.totalMarks);
+                    const status = getStatus(row.marksInput, rubric.passingMarks);
+
+                    return (
+                      <tr key={row.studentId} style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+                        <td style={{ padding: "0.9rem 1rem" }}>
+                          <div style={{ fontWeight: 700 }}>{row.studentName}</div>
+                          <div style={{ fontSize: "0.78rem", color: "hsl(var(--text-muted))" }}>
+                            {row.admissionNo}
+                          </div>
+                        </td>
+                        <td style={{ padding: "0.9rem 1rem", color: "hsl(var(--text-muted))" }}>
+                          {row.rollNo ?? "-"}
+                        </td>
+                        <td style={{ padding: "0.9rem 1rem", textAlign: "center" }}>
+                          <input
+                            type="number"
+                            className="form-input"
+                            min={0}
+                            max={rubric.totalMarks}
+                            value={row.marksInput}
+                            onChange={(event) => updateRow(row.studentId, { marksInput: event.target.value })}
+                            style={{ width: "110px", margin: "0 auto", textAlign: "center" }}
+                          />
+                        </td>
+                        <td style={{ padding: "0.9rem 1rem", textAlign: "center", fontWeight: 700 }}>
+                          {percentage ? `${percentage}%` : "-"}
+                        </td>
+                        <td style={{ padding: "0.9rem 1rem", textAlign: "center" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minWidth: "72px",
+                              padding: "0.35rem 0.65rem",
+                              borderRadius: "999px",
+                              color: status.color,
+                              background: status.background,
+                              fontWeight: 700,
+                              fontSize: "0.78rem",
+                            }}
+                          >
+                            {status.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: "0.9rem 1rem" }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={row.remarks}
+                            onChange={(event) => updateRow(row.studentId, { remarks: event.target.value })}
+                            placeholder="Optional remark"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
