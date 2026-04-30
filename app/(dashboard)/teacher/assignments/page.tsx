@@ -39,7 +39,10 @@ export default async function TeacherAssignments() {
   return (
     <>
       <Topbar title="Assignments" />
-      <TeacherAssignmentsClient assignments={assignments} totalStudents={totalStudents} />
+      <TeacherAssignmentsClient 
+        assignments={JSON.parse(JSON.stringify(assignments))} 
+        totalStudents={totalStudents} 
+      />
     </>
   );
 }

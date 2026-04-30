@@ -81,10 +81,10 @@ export default async function TeacherDashboard() {
     <>
       <Topbar title="Teacher Dashboard" />
       <TeacherDashboardClient 
-        staff={staff}
+        staff={JSON.parse(JSON.stringify(staff))}
         pendingGrades={pendingGrades}
-        announcements={announcements}
-        classesToday={classesToday}
+        announcements={JSON.parse(JSON.stringify(announcements))}
+        classesToday={JSON.parse(JSON.stringify(classesToday))}
         tenantId={tenantId}
       />
     </>

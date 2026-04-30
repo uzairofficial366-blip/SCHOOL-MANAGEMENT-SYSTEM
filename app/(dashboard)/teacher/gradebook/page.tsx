@@ -22,8 +22,8 @@ export default async function TeacherGradebook() {
     <>
       <Topbar title="Gradebook" />
       <TeacherGradebookClient
-        initialSections={sections}
-        initialExamSchedules={examSchedules}
+        initialSections={JSON.parse(JSON.stringify(sections))}
+        initialExamSchedules={JSON.parse(JSON.stringify(examSchedules))}
       />
     </>
   );

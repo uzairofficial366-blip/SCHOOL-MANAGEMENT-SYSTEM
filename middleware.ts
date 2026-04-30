@@ -1,6 +1,8 @@
-import { auth } from "@/lib/auth/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./lib/auth/auth.config";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+
+const { auth } = NextAuth(authConfig);
 
 const publicPaths = ["/login", "/register", "/api/auth", "/_next", "/favicon", "/unauthorized"];
 
@@ -8,12 +10,12 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  // Allow public paths regardless of auth status
+  // Allow public paths
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Redirect to login if not logged in and trying to access protected route
+  // Redirect to login if not logged in
   if (!isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
