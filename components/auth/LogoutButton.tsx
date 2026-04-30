@@ -17,20 +17,22 @@ export default function LogoutButton({ style, className, children }: LogoutButto
     setIsLoggingOut(true);
 
     try {
-      // 1. Hit server-side cookie-clearing endpoint first
-      await fetch("/api/auth/logout", { method: "POST" });
-
-      // 2. Clear any localStorage / sessionStorage keys used by the app
+      // 1. Clear any localStorage / sessionStorage
       try {
         localStorage.clear();
         sessionStorage.clear();
       } catch (_) {}
 
-      // 3. Let NextAuth complete the signOut — clears JWT cookie & redirects
-      await signOut({ callbackUrl: "/login", redirect: true });
+      // 2. Perform signOut without automatic redirect
+      // This clears the session cookies
+      await signOut({ redirect: false });
+
+      // 3. Manual redirect to login page (relative path)
+      // This avoids issues with NEXTAUTH_URL being set to localhost in production
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout error:", err);
-      // Fallback: hard-redirect to login even if something failed
+      // Fallback: hard-redirect to login
       window.location.href = "/login";
     }
   };
@@ -46,6 +48,9 @@ export default function LogoutButton({ style, className, children }: LogoutButto
         border: "none",
         cursor: isLoggingOut ? "not-allowed" : "pointer",
         opacity: isLoggingOut ? 0.5 : 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         ...style,
       }}
     >
