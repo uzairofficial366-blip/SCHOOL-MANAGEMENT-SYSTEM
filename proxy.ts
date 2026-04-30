@@ -1,16 +1,24 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./lib/auth/auth.config";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const publicPaths = ["/login", "/register", "/api/auth", "/_next", "/favicon", "/unauthorized"];
+const publicPaths = [
+  "/login",
+  "/register",
+  "/api/auth",
+  "/_next",
+  "/favicon",
+  "/unauthorized",
+];
 
-export default auth((req) => {
+export default auth((req: NextRequest & { auth: any }) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  // Allow public paths
+  // Allow public paths regardless of auth status
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
@@ -26,5 +34,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$).*)",
+  ],
 };
