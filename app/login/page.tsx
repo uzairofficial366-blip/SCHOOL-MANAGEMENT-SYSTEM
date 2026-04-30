@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "", tenantSlug: "", totpCode: "" });
   const [error, setError] = useState("");
   const [needsMfa, setNeedsMfa] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const urlError = searchParams.get("error");
+    if (urlError) {
+      if (urlError === "CredentialsSignin") setError("Invalid email or password");
+      else if (urlError === "Configuration") setError("Server configuration error");
+      else setError(urlError);
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -27,8 +37,40 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res?.error === "MFA_REQUIRED") { setNeedsMfa(true); return; }
-    if (res?.error) { setError(res.error === "CredentialsSignin" ? "Invalid email or password" : res.error); return; }
+    if (res?.error) { 
+      setError(res.error === "CredentialsSignin" ? "Invalid email or password" : res.error); 
+      return; 
+    }
     if (res?.ok) router.push("/dashboard");
+  };
+
+  const handleRoleClick = async (role: string) => {
+    const email = `${role.toLowerCase()}@demo-school.edu`;
+    const updatedForm = {
+      tenantSlug: "demo-school",
+      email: email,
+      password: "Admin@1234",
+      totpCode: ""
+    };
+    setForm(updatedForm);
+    setLoading(true);
+    setError("");
+
+    const res = await signIn("credentials", {
+      ...updatedForm,
+      redirect: false,
+    });
+    
+    setLoading(false);
+    if (res?.error) setError(res.error === "CredentialsSignin" ? "Invalid email or password" : res.error);
+    if (res?.ok) router.push("/dashboard");
+  };
+
+  const handleReset = () => {
+    setForm({ email: "", password: "", tenantSlug: "", totpCode: "" });
+    setError("");
+    setNeedsMfa(false);
+    router.push("/login");
   };
 
   return (
@@ -70,7 +112,25 @@ export default function LoginPage() {
             <p>Sign in to your institution portal</p>
           </div>
 
-          {error && <div className="alert-error">{error}</div>}
+          {error && (
+            <div className="alert-error" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{error}</span>
+              <button 
+                onClick={handleReset}
+                style={{ 
+                  background: 'hsl(0 0% 100% / 0.1)', 
+                  border: 'none', 
+                  color: 'inherit', 
+                  fontSize: '0.7rem', 
+                  padding: '0.2rem 0.5rem', 
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Back to Login
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
@@ -108,8 +168,16 @@ export default function LoginPage() {
           <div className="login-roles">
             <p>Quick demo roles:</p>
             <div className="role-pills">
-              {["Admin","Teacher","Student","Parent","Accountant"].map((r) => (
-                <span className="role-pill" key={r}>{r}</span>
+              {["Admin", "Teacher", "Student", "Parent", "Accountant"].map((r) => (
+                <button 
+                  type="button" 
+                  className="role-pill" 
+                  key={r} 
+                  onClick={() => handleRoleClick(r)}
+                  style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
+                >
+                  {r}
+                </button>
               ))}
             </div>
           </div>
