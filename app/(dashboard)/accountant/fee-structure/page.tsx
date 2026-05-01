@@ -46,10 +46,10 @@ export default async function FeeStructurePage() {
                 {feeStructures.map((fee) => (
                   <tr key={fee.id}>
                     <td>{fee.name}</td>
-                    <td>${fee.amount}</td>
+                    <td>${Number(fee.amount)}</td>
                     <td>{fee.frequency}</td>
                     <td>{fee.dueDay}</td>
-                    <td>${fee.lateFee}</td>
+                    <td>${Number(fee.lateFee)}</td>
                     <td>
                       <button className="btn btn-secondary btn-sm">Edit</button>
                     </td>

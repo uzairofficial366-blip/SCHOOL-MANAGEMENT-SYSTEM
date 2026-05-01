@@ -130,14 +130,24 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
   ACCOUNTANT: [
     { section: "Overview", items: [{ label: "Dashboard", href: "/accountant", icon: "⊞" }] },
     {
-      section: "Finance",
+      section: "Fee Ledger",
       items: [
-        { label: "Fee Structures", href: "/accountant/fee-structures", icon: "📋" },
-        { label: "Student Fees", href: "/admin/fees", icon: "💳" },
-        { label: "Salary", href: "/admin/salary", icon: "💰" },
+        { label: "Student Fees", href: "/accountant", icon: "🗂️" },
         { label: "Payments", href: "/accountant/payments", icon: "💳" },
-        { label: "Concessions", href: "/accountant/concessions", icon: "🏷️" },
+        { label: "Concessions & Discounts", href: "/accountant/concession", icon: "🏷️" },
         { label: "Reports", href: "/accountant/reports", icon: "📊" },
+      ],
+    },
+    {
+      section: "Payment Gateways",
+      items: [
+        { label: "EasyPaisa & JazzCash", href: "/accountant/payments", icon: "⚡" },
+      ],
+    },
+    {
+      section: "Payroll",
+      items: [
+        { label: "Staff Payroll", href: "/accountant/payroll", icon: "💰" },
       ],
     },
     {
@@ -145,6 +155,7 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
       items: [{ label: "Announcements", href: "/accountant/announcements", icon: "📢" }],
     },
   ],
+
   LIBRARIAN: [
     { section: "Overview", items: [{ label: "Dashboard", href: "/librarian", icon: "⊞" }] },
     {

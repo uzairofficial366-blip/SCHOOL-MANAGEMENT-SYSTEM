@@ -7,7 +7,7 @@ import { formatMonthLabel } from "@/lib/finance";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { studentId: string } }
+  { params }: { params: Promise<{ studentId: string }> }
 ) {
   const session = await auth();
   if (!session || !["ACCOUNTANT", "ADMIN", "SUPER_ADMIN"].includes(session.user?.role as string)) {
@@ -15,7 +15,7 @@ export async function GET(
   }
 
   const tenantId = session.user?.tenantId as string;
-  const { studentId } = params;
+  const { studentId } = await params;
   const currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   const student = await prisma.student.findUnique({

@@ -6,17 +6,19 @@ import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, formatMonthLabel } from "@/lib/finance";
 
 export const metadata = { title: "Accountant Dashboard" };
+export const dynamic = "force-dynamic";
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-export default async function AccountantPage({ searchParams }: { searchParams: { grade?: string; section?: string } }) {
+export default async function AccountantPage({ searchParams }: { searchParams: Promise<{ grade?: string; section?: string }> }) {
   const session = await auth();
   if (!session || !["ACCOUNTANT", "ADMIN", "SUPER_ADMIN"].includes(session.user?.role as string)) {
     redirect("/login");
   }
 
+  const { grade: selectedGrade = "", section: selectedSection = "" } = await searchParams;
   const tenantId = session.user?.tenantId as string;
   const currentMonth = startOfMonth(new Date());
 
@@ -57,8 +59,7 @@ export default async function AccountantPage({ searchParams }: { searchParams: {
     orderBy: { user: { name: "asc" } },
   });
 
-  const selectedGrade = searchParams.grade || "";
-  const selectedSection = searchParams.section || "";
+
 
   let filteredStudents = students;
   if (selectedGrade) {
