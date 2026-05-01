@@ -113,19 +113,11 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div className="alert-error" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="alert-error">
               <span>{error}</span>
               <button 
                 onClick={handleReset}
-                style={{ 
-                  background: 'hsl(0 0% 100% / 0.1)', 
-                  border: 'none', 
-                  color: 'inherit', 
-                  fontSize: '0.7rem', 
-                  padding: '0.2rem 0.5rem', 
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
+                className="alert-error-btn"
               >
                 Back to Login
               </button>
@@ -174,7 +166,6 @@ function LoginForm() {
                   className="role-pill" 
                   key={r} 
                   onClick={() => handleRoleClick(r)}
-                  style={{ border: 'none', cursor: 'pointer', outline: 'none' }}
                 >
                   {r}
                 </button>
@@ -233,6 +224,11 @@ function LoginForm() {
           background: hsl(var(--danger)/0.15); border: 1px solid hsl(var(--danger)/0.3);
           color: hsl(var(--danger)); padding: 0.75rem 1rem; border-radius: 8px;
           font-size: 0.875rem; margin-bottom: 1rem;
+          display: flex; justify-content: space-between; align-items: center;
+        }
+        .alert-error-btn {
+          background: hsl(0 0% 100% / 0.1); border: none; color: inherit;
+          font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
         }
         .login-roles { border-top: 1px solid hsl(0 0% 100% / 0.1); padding-top: 1rem; }
         .login-roles p { font-size: 0.78rem; color: hsl(0 0% 100% / 0.35); margin-bottom: 0.5rem; }
@@ -241,6 +237,7 @@ function LoginForm() {
           font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 999px;
           background: hsl(var(--primary)/0.2); color: hsl(var(--primary-light));
           border: 1px solid hsl(var(--primary)/0.25);
+          cursor: pointer; outline: none;
         }
         @media (max-width: 900px) {
           .login-left { display: none; }

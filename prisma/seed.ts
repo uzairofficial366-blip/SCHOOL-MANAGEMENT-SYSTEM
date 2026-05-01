@@ -296,16 +296,16 @@ async function main() {
     create: { id: "fee-transport", tenantId: tid, name: "Transport Fee", amount: 2000, frequency: "MONTHLY", dueDay: 10, lateFee: 200 },
   });
 
-  // FEE PAYMENTS
-  const months = [new Date("2024-04-10"), new Date("2024-05-10"), new Date("2024-06-10")];
-  for (const sid of studentIds) {
-    for (const m of months) {
-      const paid = Math.random() > 0.2;
-      await prisma.feePayment.create({
-        data: { tenantId: tid, studentId: sid, feeStructureId: feeTuition.id, amount: 8500, amountPaid: paid ? 8500 : 0, dueDate: m, paymentDate: paid ? m : null, method: paid ? "CASH" : null, status: paid ? "PAID" : "PENDING" },
-      }).catch(() => {});
-    }
-  }
+  // FEE PAYMENTS - Commented out to remove demo data
+  // const months = [new Date("2024-04-10"), new Date("2024-05-10"), new Date("2024-06-10")];
+  // for (const sid of studentIds) {
+  //   for (const m of months) {
+  //     const paid = Math.random() > 0.2;
+  //     await prisma.feePayment.create({
+  //       data: { tenantId: tid, studentId: sid, feeStructureId: feeTuition.id, amount: 8500, amountPaid: paid ? 8500 : 0, dueDate: m, paymentDate: paid ? m : null, method: paid ? "CASH" : null, status: paid ? "PAID" : "PENDING" },
+  //     }).catch(() => {});
+  //   }
+  // }
 
   // LMS CONTENT + ASSIGNMENTS
   const lms1 = await prisma.lmsContent.create({

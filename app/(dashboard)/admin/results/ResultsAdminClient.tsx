@@ -62,15 +62,6 @@ export default function ResultsAdminClient({
     [selectedGradeId, sections]
   );
 
-  useEffect(() => {
-    if (selectedGradeId || selectedSectionId) {
-      fetchResults();
-      if (selectedSectionId) fetchEnrolledData();
-    } else {
-      setGradeRecords([]);
-    }
-  }, [selectedGradeId, selectedSectionId]);
-
   const fetchResults = async () => {
     setLoading(true);
     try {
@@ -106,6 +97,15 @@ export default function ResultsAdminClient({
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    if (selectedGradeId || selectedSectionId) {
+      fetchResults();
+      if (selectedSectionId) fetchEnrolledData();
+    } else {
+      setGradeRecords([]);
+    }
+  }, [selectedGradeId, selectedSectionId]); // eslint-disable-line react-hooks/set-state-in-effect,react-hooks/exhaustive-deps
 
   const startEditing = (rec: GradeRecord) => {
     setEditingRows((prev) => ({

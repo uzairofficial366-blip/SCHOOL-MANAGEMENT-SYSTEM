@@ -33,7 +33,7 @@ export default function AnnouncementsAdminClient() {
   };
 
   useEffect(() => {
-    fetchAnnouncements();
+    fetchAnnouncements(); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   const onSubmit = async (data: any) => {

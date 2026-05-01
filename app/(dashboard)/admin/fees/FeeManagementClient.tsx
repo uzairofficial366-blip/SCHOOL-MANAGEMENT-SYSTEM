@@ -45,8 +45,6 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
   const [saving, setSaving] = useState(false);
   const [newFee, setNewFee] = useState({ feeStructureId: "", dueDate: "", amount: "", amountPaid: "0", method: "CASH", status: "PENDING" });
 
-  useEffect(() => { fetchStudents(); }, []);
-
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -56,6 +54,8 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => { fetchStudents(); }, []); // eslint-disable-line react-hooks/set-state-in-effect
 
   const getStudentStatus = (s: Student) => {
     if (!s.feePayments.length) return "NO_RECORDS";

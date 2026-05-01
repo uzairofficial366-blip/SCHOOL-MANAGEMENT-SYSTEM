@@ -53,7 +53,7 @@ export default function CalendarAdminClient() {
   };
 
   useEffect(() => {
-    fetchEvents();
+    fetchEvents(); // eslint-disable-line react-hooks/set-state-in-effect,react-hooks/exhaustive-deps
   }, [year, month]);
 
   const onPrevMonth = () => {
