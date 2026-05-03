@@ -14,7 +14,7 @@ const publicPaths = [
   "/unauthorized",
 ];
 
-export const proxy = auth((req: NextRequest & { auth: any }) => {
+export default auth((req: NextRequest & { auth: any }) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
