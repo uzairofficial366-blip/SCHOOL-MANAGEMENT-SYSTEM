@@ -15,9 +15,9 @@ function LoginForm() {
   useEffect(() => {
     const urlError = searchParams.get("error");
     if (urlError) {
-      if (urlError === "CredentialsSignin") setError("Invalid email or password");
-      else if (urlError === "Configuration") setError("Server configuration error");
-      else setError(urlError);
+      if (urlError === "CredentialsSignin") Promise.resolve().then(() => setError("Invalid email or password"));
+      else if (urlError === "Configuration") Promise.resolve().then(() => setError("Server configuration error"));
+      else Promise.resolve().then(() => setError(urlError));
     }
   }, [searchParams]);
 

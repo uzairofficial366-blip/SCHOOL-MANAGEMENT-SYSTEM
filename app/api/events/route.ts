@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const month = searchParams.get("month"); // e.g. "2026-04"
     const year = searchParams.get("year");
 
-    let whereClause: any = { tenantId };
+    const whereClause: any = { tenantId };
 
     // Date range filtering
     if (month) {

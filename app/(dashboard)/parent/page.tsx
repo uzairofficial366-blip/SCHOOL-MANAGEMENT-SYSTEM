@@ -21,7 +21,7 @@ export default async function ParentDashboard() {
   });
   const studentIds = guardians.map((g) => g.studentId);
 
-  let data = {
+  const data = {
     totalOutstanding: 0, totalPaid: 0, overdueCount: 0,
     overdueAmount: 0, nextDueDate: null as string | null,
     paidThisMonth: 0, children: [] as any[], announcements: [] as any[],

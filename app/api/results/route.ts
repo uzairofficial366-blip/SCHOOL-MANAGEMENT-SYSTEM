@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       studentIds = enrollments.map((e) => e.studentId);
     }
 
-    let gradeRecordWhere: any = { tenantId };
+    const gradeRecordWhere: any = { tenantId };
     if (studentIds !== undefined) {
       gradeRecordWhere.studentId = { in: studentIds };
     }

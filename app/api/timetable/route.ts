@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const sectionId = searchParams.get('sectionId');
     const role = session.user?.role;
 
-    let whereClause: any = { tenantId };
+    const whereClause: any = { tenantId };
 
     if (sectionId) {
       whereClause.sectionId = sectionId;

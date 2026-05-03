@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
 
-    let whereClause: any = { studentId: student.id };
+    const whereClause: any = { studentId: student.id };
 
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month), 1);

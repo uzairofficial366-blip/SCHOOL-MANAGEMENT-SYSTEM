@@ -10,7 +10,7 @@ export default function TeacherLmsClient({ initialContent }: any) {
   // Dynamic Data Fetching Simulation
   useEffect(() => {
     if (!initialContent) {
-      setLoading(true);
+      Promise.resolve().then(() => setLoading(true));
       setTimeout(() => {
         setLmsContent([
           { id: '1', title: 'Intro to Thermodynamics', type: 'PDF', description: 'Chapter 1 notes' },

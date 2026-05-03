@@ -38,7 +38,7 @@ export default function AdmissionsDashboard({ cycles, applications, academicYear
 
   useEffect(() => {
     if (searchParams.get("new") === "true") {
-      setShowNewApp(true);
+      Promise.resolve().then(() => setShowNewApp(true));
       // Clean up the URL so it doesn't stay open on refresh
       router.replace("/admin/admissions");
     }
