@@ -1,0 +1,1 @@
+AUTHORIZE CALLED with: {"email":"accountant@demo-school.edu","password":"Admin@1234","tenantSlug":"demo-school","totpCode":"","csrfToken":"25b73bfe3fa37b803fdaeb35a3feeb19c7f00794f35850d513e285211e06ba3c","callbackUrl":"http://localhost:3000/login?callbackUrl=%2F"}

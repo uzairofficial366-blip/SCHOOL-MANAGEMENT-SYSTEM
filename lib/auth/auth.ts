@@ -19,15 +19,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "credentials",
       async authorize(credentials) {
         try {
+          require("fs").appendFileSync("auth_error.log", "AUTHORIZE CALLED with: " + JSON.stringify(credentials) + "\n");
           const parsed = loginSchema.safeParse(credentials);
-          if (!parsed.success) return null;
+          if (!parsed.success) {
+            require("fs").appendFileSync("auth_error.log", "Parse failed: " + JSON.stringify(parsed.error) + "\n");
+            return null;
+          }
 
           const { email, password, tenantSlug, totpCode } = parsed.data;
 
           const tenant = await prisma.tenant.findUnique({
             where: { slug: tenantSlug, isActive: true },
           });
-          if (!tenant) return null;
+          if (!tenant) {
+            require("fs").appendFileSync("auth_error.log", "Tenant not found: " + tenantSlug + "\n");
+            return null;
+          }
 
           let user = await prisma.user.findFirst({
             where: { tenantId: tenant.id, email, isActive: true, deletedAt: null },
@@ -51,10 +58,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
           }
 
-          if (!user?.passwordHash) return null;
+          if (!user) {
+            require("fs").appendFileSync("auth_error.log", "User not found: " + email + "\n");
+            return null;
+          }
+
+          if (!user?.passwordHash) {
+            require("fs").appendFileSync("auth_error.log", "User missing passwordHash: " + email + "\n");
+            return null;
+          }
 
           const valid = await bcrypt.compare(password, user.passwordHash);
-          if (!valid) return null;
+          if (!valid) {
+            require("fs").appendFileSync("auth_error.log", "Invalid password for: " + email + "\n");
+            return null;
+          }
 
           if (user.mfaEnabled && user.mfaSecret) {
             if (!totpCode) throw new Error("MFA_REQUIRED");
@@ -82,8 +100,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             tenantSlug:  tenant.slug,
             tenantName:  tenant.name,
           };
-        } catch (error) {
+        } catch (error: any) {
           console.error("Login Error:", error);
+          require("fs").appendFileSync("auth_error.log", new Date().toISOString() + " - " + error.stack + "\n");
           return null;
         }
       },
