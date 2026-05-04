@@ -19,10 +19,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "credentials",
       async authorize(credentials) {
         try {
-          require("fs").appendFileSync("auth_error.log", "AUTHORIZE CALLED with: " + JSON.stringify(credentials) + "\n");
+          console.log("AUTHORIZE CALLED with: " + JSON.stringify(credentials));
           const parsed = loginSchema.safeParse(credentials);
           if (!parsed.success) {
-            require("fs").appendFileSync("auth_error.log", "Parse failed: " + JSON.stringify(parsed.error) + "\n");
+            console.error("Parse failed: " + JSON.stringify(parsed.error));
             return null;
           }
 
@@ -32,7 +32,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { slug: tenantSlug, isActive: true },
           });
           if (!tenant) {
-            require("fs").appendFileSync("auth_error.log", "Tenant not found: " + tenantSlug + "\n");
+            console.error("Tenant not found: " + tenantSlug);
             return null;
           }
 
@@ -59,18 +59,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           if (!user) {
-            require("fs").appendFileSync("auth_error.log", "User not found: " + email + "\n");
+            console.error("User not found: " + email);
             return null;
           }
 
           if (!user?.passwordHash) {
-            require("fs").appendFileSync("auth_error.log", "User missing passwordHash: " + email + "\n");
+            console.error("User missing passwordHash: " + email);
             return null;
           }
 
           const valid = await bcrypt.compare(password, user.passwordHash);
           if (!valid) {
-            require("fs").appendFileSync("auth_error.log", "Invalid password for: " + email + "\n");
+            console.error("Invalid password for: " + email);
             return null;
           }
 
@@ -102,7 +102,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           };
         } catch (error: any) {
           console.error("Login Error:", error);
-          require("fs").appendFileSync("auth_error.log", new Date().toISOString() + " - " + error.stack + "\n");
+          console.error(new Date().toISOString() + " - " + error.stack);
           return null;
         }
       },
