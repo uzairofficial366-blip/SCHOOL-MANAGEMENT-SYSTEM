@@ -36,12 +36,20 @@ export default function AdmissionsDashboard({ cycles, applications, academicYear
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    if (searchParams.get("new") === "true") {
-      Promise.resolve().then(() => setShowNewApp(true));
-      // Clean up the URL so it doesn't stay open on refresh
-      router.replace("/admin/admissions");
-    }
+  // useEffect(() => {
+  //   if (searchParams.get("new") === "true") {
+  //     Promise.resolve().then(() => setShowNewApp(true));
+  //     // Clean up the URL so it doesn't stay open on refresh
+  //     router.replace("/admin/admissions");
+  //   }
+
+      useEffect(() => {
+  if (searchParams.get("new") === "true") {
+    setTimeout(() => setShowNewApp(true), 0);
+    router.replace("/admin/admissions");
+  }
+
+
   }, [searchParams, router]);
 
   const filteredApps = applications.filter((a: any) => {

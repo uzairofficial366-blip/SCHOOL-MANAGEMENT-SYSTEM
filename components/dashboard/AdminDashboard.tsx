@@ -81,7 +81,7 @@ export default function AdminDashboard({ userName, dbData }: AdminDashboardProps
             Good morning, {userName.split(" ")[0]} 👋
           </h2>
           <p style={{ color: "hsl(var(--text-muted))", marginTop: "0.25rem", fontSize: "0.9rem" }}>
-            Here's what's happening at your institution today.
+            Here&apos;s what&apos;s happening at your institution today.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
