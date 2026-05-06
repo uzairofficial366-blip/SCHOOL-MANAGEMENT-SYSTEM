@@ -60,11 +60,16 @@ export default async function TeacherClasses() {
 
   return (
     <>
+      <style>{`
+        /* Scope full-height layout to My Classes page only */
+        .main-content { height: 100vh; overflow: hidden; }
+        .page-body     { overflow: hidden; display: flex; flex-direction: column; height: calc(100vh - 64px); padding: 0; }
+      `}</style>
       <Topbar title="My Assigned Classes" />
       <div className="page-body fade-up">
-        <TeacherClassesClient 
-          classesToday={classesToday} 
-          roster={roster} 
+        <TeacherClassesClient
+          classesToday={classesToday}
+          roster={roster}
           staffId={staff.id}
         />
       </div>

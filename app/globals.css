@@ -164,7 +164,7 @@ body {
   display: flex; flex-direction: column;
   min-height: 100vh;
 }
-.page-body { padding: 1.75rem 2rem; flex: 1; }
+.page-body {flex: 1; }
 
 /* ── BUTTONS ───────────────────────────────────────────────────────────── */
 .btn {

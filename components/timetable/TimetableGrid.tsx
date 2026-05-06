@@ -38,13 +38,13 @@ export default function TimetableGrid({ slots, onDeleteSlot, isAdmin }: Props) {
   }, [slots]);
 
   return (
-    <div className="timetable-wrapper" style={{ overflowX: "auto", background: "white", borderRadius: "12px", border: "1px solid #eaeaea" }}>
-      <table style={{ width: "100%", minWidth: "800px", borderCollapse: "collapse" }}>
+    <div className="timetable-wrapper" style={{ overflowX: "auto", background: "white", borderRadius: "12px", border: "1px solid #eaeaea", fontSize: "0.78rem" }}>
+      <table style={{ width: "100%", minWidth: "640px", borderCollapse: "collapse", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th style={{ width: "100px", padding: "1rem", borderBottom: "2px solid #eaeaea", borderRight: "1px solid #eaeaea", background: "#f8f9fa" }}>Time</th>
+            <th style={{ width: "72px", borderBottom: "2px solid #eaeaea", borderRight: "1px solid #eaeaea", background: "#f8f9fa", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.7rem" }}>Time</th>
             {DAYS.map((day, i) => (
-              <th key={day} style={{ padding: "1rem", borderBottom: "2px solid #eaeaea", borderRight: "1px solid #eaeaea", background: "#f8f9fa", textAlign: "center" }}>
+              <th key={day} style={{ padding: "0.4rem 0.25rem", borderBottom: "2px solid #eaeaea", borderRight: "1px solid #eaeaea", background: "#f8f9fa", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.7rem" }}>
                 {day}
               </th>
             ))}
@@ -55,7 +55,7 @@ export default function TimetableGrid({ slots, onDeleteSlot, isAdmin }: Props) {
             const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
             return (
               <tr key={hour}>
-                <td style={{ padding: "0.5rem", borderBottom: "1px solid #eaeaea", borderRight: "1px solid #eaeaea", fontWeight: 600, color: "var(--text-muted)", textAlign: "center" }}>
+                <td style={{ padding: "0.25rem 0.3rem", borderBottom: "1px solid #eaeaea", borderRight: "1px solid #eaeaea", fontWeight: 600, color: "var(--text-muted)", textAlign: "center", fontSize: "0.72rem", whiteSpace: "nowrap" }}>
                   {timeLabel}
                 </td>
                 {DAYS.map((_, dayIndex) => {
@@ -67,35 +67,39 @@ export default function TimetableGrid({ slots, onDeleteSlot, isAdmin }: Props) {
                   });
 
                   return (
-                    <td key={dayIndex} style={{ padding: "0.5rem", borderBottom: "1px solid #eaeaea", borderRight: "1px solid #eaeaea", verticalAlign: "top", height: "80px", position: "relative" }}>
+                    <td key={dayIndex} style={{ padding: "0.25rem", borderBottom: "1px solid #eaeaea", borderRight: "1px solid #eaeaea", verticalAlign: "top", height: "60px", position: "relative" }}>
                       {slot && (
                         <div style={{
                           background: "hsl(var(--primary) / 0.1)",
                           border: "1px solid hsl(var(--primary) / 0.2)",
-                          borderRadius: "6px",
-                          padding: "0.5rem",
+                          borderRadius: "5px",
+                          padding: "0.2rem 0.3rem",
                           height: "100%",
-                          position: "relative"
+                          position: "relative",
+                          overflow: "hidden"
                         }}>
-                          <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "hsl(var(--primary))" }}>{slot.subject.name}</div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{slot.section.grade.name} - {slot.section.name}</div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>{slot.staff.user.name}</div>
-                          
-                          {/* Class Teacher Info */}
-                          {slot.section.classTeacher && (
-                            <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginTop: "0.1rem", borderTop: "1px solid hsl(var(--primary)/0.1)", paddingTop: "0.1rem" }}>
+                          <div style={{ fontWeight: 700, fontSize: "0.75rem", color: "hsl(var(--primary))", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{slot.subject.name}</div>
+                          <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: 1.2 }}>{slot.section.grade.name} · {slot.section.name}</div>
+                          <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 600, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{slot.staff.user.name}</div>
+
+                          {/* Class Teacher Info — only show if different from staff */}
+                          {slot.section.classTeacher && slot.section.classTeacher.user.name !== slot.staff.user.name && (
+                            <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", lineHeight: 1.2, borderTop: "1px solid hsl(var(--primary)/0.15)", paddingTop: "0.1rem", marginTop: "0.1rem" }}>
                               CT: {slot.section.classTeacher.user.name}
                             </div>
                           )}
 
-                          <div style={{ fontSize: "0.7rem", marginTop: "0.2rem", fontWeight: 600 }}>
-                            {slot.startTime} - {slot.endTime} {slot.room && `| Rm: ${slot.room}`}
-                          </div>
-                          
+                          {/* Room only — time is already in the left column */}
+                          {slot.room && (
+                            <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", lineHeight: 1.2 }}>
+                              Rm: {slot.room}
+                            </div>
+                          )}
+
                           {isAdmin && onDeleteSlot && (
-                            <button 
+                            <button
                               onClick={() => onDeleteSlot(slot.id)}
-                              style={{ position: "absolute", top: "4px", right: "4px", background: "none", border: "none", color: "hsl(var(--danger))", cursor: "pointer", fontSize: "1rem" }}
+                              style={{ position: "absolute", top: "2px", right: "3px", background: "none", border: "none", color: "hsl(var(--danger))", cursor: "pointer", fontSize: "0.8rem", lineHeight: 1, padding: 0 }}
                               title="Delete Slot"
                             >
                               &times;

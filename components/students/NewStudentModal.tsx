@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 export default function NewStudentModal({ 
@@ -17,7 +18,10 @@ export default function NewStudentModal({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
   const currentAcademicYear = academicYears.find(y => y.isCurrent)?.id || "";
 
   const [form, setForm] = useState({
@@ -78,13 +82,16 @@ export default function NewStudentModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div style={{
       position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.5)",
-      backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", overflowY: "auto"
+      backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem"
     }} onClick={onClose}>
       <div className="card" style={{
-        width: "100%", maxWidth: 650, padding: "2rem", animation: "fadeUp 0.3s ease", margin: "auto"
+        width: "100%", maxWidth: 650, padding: "2rem", animation: "fadeUp 0.3s ease",
+        maxHeight: "calc(100vh - 3rem)", overflowY: "auto"
       }} onClick={(e) => e.stopPropagation()}>
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
@@ -185,5 +192,5 @@ export default function NewStudentModal({
         </form>
       </div>
     </div>
-  );
+  , document.body);
 }
