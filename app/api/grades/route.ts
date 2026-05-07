@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
     }
 
     const numericLevel = parseInt(level.toString(), 10);
+    if (isNaN(numericLevel)) {
+      return NextResponse.json({ error: "Level must be a valid number" }, { status: 400 });
+    }
 
     // Check unique constraint on [tenantId, level]
     const existing = await prisma.grade.findUnique({

@@ -39,14 +39,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
     }
 
+    const parsedCapacity = capacity ? parseInt(capacity.toString()) : undefined;
+    if (capacity !== undefined && isNaN(parsedCapacity as number)) {
+        return NextResponse.json({ error: "Capacity must be a valid number" }, { status: 400 });
+    }
+
     const section = await prisma.section.update({
       where: { id: sectionId },
       data: {
         gradeId,
         academicYearId,
         name,
-        capacity: capacity ? parseInt(capacity.toString()) : undefined,
-        classTeacherId,
+        capacity: parsedCapacity,
+        classTeacherId: classTeacherId || null,
         roomNumber
       }
     });

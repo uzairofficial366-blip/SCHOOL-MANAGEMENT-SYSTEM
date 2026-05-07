@@ -23,6 +23,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const numericLevel = level !== undefined ? parseInt(level.toString(), 10) : existing.level;
+    if (isNaN(numericLevel)) {
+      return NextResponse.json({ error: "Level must be a valid number" }, { status: 400 });
+    }
 
     if (numericLevel !== existing.level) {
       const dup = await prisma.grade.findUnique({

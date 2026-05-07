@@ -89,14 +89,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Section ${name} was previously deleted. Please restore or use a different name.` }, { status: 400 });
     }
 
+    const parsedCapacity = capacity ? parseInt(capacity.toString()) : 40;
+    if (isNaN(parsedCapacity)) {
+      return NextResponse.json({ error: "Capacity must be a valid number" }, { status: 400 });
+    }
+
     const section = await prisma.section.create({
       data: {
         tenantId,
         gradeId,
         academicYearId,
         name,
-        capacity: capacity ? parseInt(capacity) : 40,
-        classTeacherId,
+        capacity: parsedCapacity,
+        classTeacherId: classTeacherId || null,
         roomNumber
       }
     });
