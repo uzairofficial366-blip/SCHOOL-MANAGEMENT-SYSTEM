@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const STATUS_ACTIONS: Record<string, { label: string; next: string; color: string }[]> = {
@@ -37,6 +37,12 @@ export default function ApplicationDetailModal({ application, sections, onClose 
   const [showEnrollInput, setShowEnrollInput] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // ── Body scroll lock ─────────────────────────────────────────────────
+  useEffect(() => {
+    document.body.classList.add("modal-open");
+    return () => { document.body.classList.remove("modal-open"); };
+  }, []);
 
   const handleStatusChange = async (newStatus: string) => {
     setErrorMsg("");
@@ -88,16 +94,10 @@ export default function ApplicationDetailModal({ application, sections, onClose 
   const availableSections = sections.filter(s => s.academicYearId === application.cycle.academicYearId);
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "2rem",
-    }} onClick={onClose}>
-      <div className="card" style={{
-        width: "100%", maxWidth: 720, maxHeight: "90vh", overflow: "auto",
-        padding: "2rem", animation: "fadeUp 0.3s ease",
-      }} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" style={{ zIndex: 250, alignItems: "flex-start", paddingTop: "2rem" }} onClick={onClose}>
+      <div className="modal-box" style={{ maxWidth: 720, padding: 0 }} onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ padding: "2rem", overflowY: "auto", maxHeight: "90vh" }}>
         
         {errorMsg && (
           <div style={{ padding: "0.5rem 0.75rem", background: "hsl(var(--danger)/0.08)", border: "1px solid hsl(var(--danger)/0.2)", borderRadius: 8, color: "hsl(var(--danger))", fontSize: "0.82rem", marginBottom: "1rem" }}>
@@ -274,6 +274,7 @@ export default function ApplicationDetailModal({ application, sections, onClose 
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

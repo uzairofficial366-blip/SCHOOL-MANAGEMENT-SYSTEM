@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -25,6 +25,12 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
     gradeAppliedFor: "",
     previousSchool: "",
   });
+
+  // ── Body scroll lock
+  useEffect(() => {
+    document.body.classList.add("modal-open");
+    return () => { document.body.classList.remove("modal-open"); };
+  }, []);
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -78,18 +84,13 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
   ];
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.5)",
-      backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem",
-    }} onClick={onClose}>
-      <div className="card" style={{
-        width: "100%", maxWidth: 600, padding: "2rem", animation: "fadeUp 0.3s ease",
-      }} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, fontFamily: "var(--font-display)" }}>New Application</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.3rem", color: "hsl(var(--text-muted))" }}>✕</button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>New Application</h3>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
+        <div className="modal-body">
 
         {/* Step indicator */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: "1.5rem", gap: "0.25rem" }}>
@@ -214,8 +215,8 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
           </div>
         )}
 
-        {/* Navigation */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>
+        </div>
+        <div className="modal-footer">
           <button className="btn btn-ghost btn-sm" onClick={step > 1 ? () => setStep(step - 1) : onClose}>
             {step > 1 ? "← Back" : "Cancel"}
           </button>
