@@ -542,29 +542,28 @@ body.modal-open { overflow: hidden; }
 }
 
 .subject-modal {
-  max-width: min(480px, calc(100vw - 2rem));
-  max-height: calc(100vh - 2rem);
+  max-width: min(520px, calc(100vw - 3rem));
+  max-height: 90vh;
 }
 .subject-modal-overlay {
-  align-items: flex-start;
+  align-items: center;
   overflow-y: auto;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: 1.5rem;
 }
 .subject-modal .modal-header {
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid hsl(var(--border));
 }
 .subject-modal .modal-header h3 {
   font-size: 1.1rem;
 }
 .subject-modal-body {
-  padding: 1.15rem 1.25rem;
+  padding: 1.5rem;
   min-height: 0;
 }
 .subject-modal .modal-footer {
   justify-content: flex-end;
-  padding: 0.85rem 1.25rem;
+  padding: 1rem 1.5rem;
 }
 .subject-modal-form {
   display: flex;
@@ -573,20 +572,20 @@ body.modal-open { overflow: hidden; }
   flex-direction: column;
 }
 .subject-modal .form-group {
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 .subject-modal .form-label {
   font-size: 0.78rem;
 }
 .subject-modal .form-input {
-  min-height: 36px;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.82rem;
+  min-height: 40px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
 }
 .subject-form-grid {
   display: grid;
-  gap: 0.85rem;
-  margin-bottom: 0.85rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 .subject-form-grid-even {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -596,14 +595,14 @@ body.modal-open { overflow: hidden; }
 }
 .subject-allocations {
   border-top: 1px solid hsl(var(--border));
-  padding-top: 0.85rem;
+  padding-top: 1rem;
 }
 .subject-allocations-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.75rem;
 }
 .subject-allocation-list {
   display: flex;
@@ -621,7 +620,7 @@ body.modal-open { overflow: hidden; }
 }
 .subject-empty-allocation {
   text-align: center;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 2px dashed hsl(var(--border));
   border-radius: 8px;
   color: hsl(var(--text-muted));
@@ -631,8 +630,6 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 640px) {
   .subject-modal-overlay {
     padding: 0.75rem;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
   }
   .subject-modal {
     max-width: calc(100vw - 1.5rem);

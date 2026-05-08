@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 
@@ -19,6 +20,7 @@ export default function SubjectsClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [apiError, setApiError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm({
     defaultValues: {
@@ -33,6 +35,7 @@ export default function SubjectsClient({
 
   // ── Body scroll lock ───────────────────────────────────────────────────
   useEffect(() => {
+    setIsMounted(true);
     if (isModalOpen) {
       document.body.classList.add("modal-open");
     } else {
@@ -225,9 +228,9 @@ export default function SubjectsClient({
       )}
 
       {/* ── Subject Modal ────────────────────────────────────────────── */}
-      {isModalOpen && (
+      {isMounted && isModalOpen && createPortal(
         <div className="modal-overlay subject-modal-overlay" onClick={closeModal}>
-          <div className="modal-box subject-modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-box subject-modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingSubject ? `Edit — ${editingSubject.name}` : "Add New Subject"}</h3>
               <button className="modal-close-btn" onClick={closeModal}>✕</button>
@@ -327,7 +330,8 @@ export default function SubjectsClient({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
