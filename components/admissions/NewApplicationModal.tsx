@@ -84,33 +84,33 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay new-application-overlay" onClick={onClose}>
+      <div className="modal-box new-application-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>New Application</h3>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
-        <div className="modal-body">
+        <div className="modal-body new-application-body">
 
         {/* Step indicator */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "1.5rem", gap: "0.25rem" }}>
+        <div className="application-stepper">
           {steps.map((s, i) => (
-            <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+            <div key={s.num} className="application-step">
               <div style={{
-                width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "0.8rem", fontWeight: 700, flexShrink: 0,
                 background: step > s.num ? "hsl(var(--success))" : step === s.num ? "hsl(var(--primary))" : "hsl(var(--border))",
                 color: step >= s.num ? "white" : "hsl(var(--text-muted))",
-              }}>
+              }} className="application-step-dot">
                 {step > s.num ? "✓" : s.num}
               </div>
               {i < steps.length - 1 && (
-                <div style={{ flex: 1, height: 2, margin: "0 0.4rem", background: step > s.num ? "hsl(var(--success))" : "hsl(var(--border))" }} />
+                <div className="application-step-line" style={{ background: step > s.num ? "hsl(var(--success))" : "hsl(var(--border))" }} />
               )}
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+        <div className="application-step-labels">
           {steps.map((s) => (
             <div key={s.num} style={{ fontSize: "0.7rem", color: step === s.num ? "hsl(var(--primary))" : "hsl(var(--text-muted))", textAlign: "center", flex: 1, fontWeight: step === s.num ? 700 : 400 }}>
               {s.label}
@@ -126,7 +126,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
 
         {/* Step 1: Student Info */}
         {step === 1 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div className="application-form-stack">
             {cycles.length === 0 ? (
               <div style={{ padding: "1rem", background: "hsl(var(--warning)/0.1)", border: "1px solid hsl(var(--warning)/0.3)", borderRadius: 8, color: "hsl(var(--warning))", textAlign: "center" }}>
                 <strong>No Open Admission Cycles Found</strong>
@@ -145,7 +145,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
               <label className="form-label">Student Full Name *</label>
               <input className="form-input" value={form.studentName} onChange={(e) => updateField("studentName", e.target.value)} placeholder="e.g. Ahmed Khan" disabled={cycles.length === 0} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="application-form-grid">
               <div className="form-group">
                 <label className="form-label">Date of Birth</label>
                 <input className="form-input" type="date" value={form.dateOfBirth} onChange={(e) => updateField("dateOfBirth", e.target.value)} disabled={cycles.length === 0} />
@@ -176,7 +176,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
 
         {/* Step 2: Parent Info */}
         {step === 2 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div className="application-form-stack">
             <div className="form-group">
               <label className="form-label">Parent/Guardian Name *</label>
               <input className="form-input" value={form.parentName} onChange={(e) => updateField("parentName", e.target.value)} placeholder="e.g. Muhammad Ali" />

@@ -14,7 +14,7 @@ export default function SubjectsClient({
   staff: any[];
 }) {
   const router = useRouter();
-  const [subjects, setSubjects] = useState<any[]>(initialSubjects);
+  const [subjects] = useState<any[]>(initialSubjects);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
@@ -113,7 +113,7 @@ export default function SubjectsClient({
 
       {/* ── Card Grid ───────────────────────────────────────────────── */}
       {filteredSubjects.length > 0 ? (
-        <div className="grid-3">
+        <div className="subjects-grid">
           {filteredSubjects.map((subject: any, idx: number) => {
             const accent = ACCENTS[idx % ACCENTS.length];
             const allocCount = subject.allocations?.length ?? 0;
@@ -121,12 +121,12 @@ export default function SubjectsClient({
             const teacherSet = new Set(subject.allocations?.map((a: any) => a.staffId) ?? []);
 
             return (
-              <div key={subject.id} className="admin-card">
+              <div key={subject.id} className="admin-card subject-card">
                 {/* Gradient accent */}
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent.bar }} />
 
                 {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.85rem", marginTop: "0.25rem" }}>
+                <div className="subject-card-header">
                   <div style={{ flex: 1 }}>
                     <span style={{
                       display: "inline-flex", padding: "0.15rem 0.55rem", borderRadius: 6,
@@ -136,15 +136,11 @@ export default function SubjectsClient({
                     }}>
                       {subject.code}
                     </span>
-                    <div style={{ fontSize: "1.2rem", fontWeight: 800, fontFamily: "var(--font-display)", lineHeight: 1.2 }}>
+                    <div className="subject-card-title">
                       {subject.name}
                     </div>
                   </div>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10, flexShrink: 0, marginLeft: "0.75rem",
-                    background: accent.badge, display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "1.1rem",
-                  }}>
+                  <div className="subject-card-icon" style={{ background: accent.badge }}>
                     📚
                   </div>
                 </div>
@@ -157,7 +153,7 @@ export default function SubjectsClient({
                 )}
 
                 {/* Credit hours pill */}
-                <div style={{ marginBottom: "1rem" }}>
+                <div style={{ marginBottom: "0.75rem" }}>
                   <span style={{
                     display: "inline-flex", alignItems: "center", gap: "0.3rem",
                     padding: "0.25rem 0.75rem", borderRadius: "999px",
@@ -170,7 +166,7 @@ export default function SubjectsClient({
 
                 {/* Allocated sections preview */}
                 {allocCount > 0 && (
-                  <div style={{ marginBottom: "1rem" }}>
+                  <div style={{ marginBottom: "0.75rem" }}>
                     <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "hsl(var(--text-muted))", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.35rem" }}>
                       Taught In
                     </div>
@@ -230,22 +226,22 @@ export default function SubjectsClient({
 
       {/* ── Subject Modal ────────────────────────────────────────────── */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-box" style={{ maxWidth: 620 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay subject-modal-overlay" onClick={closeModal}>
+          <div className="modal-box subject-modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingSubject ? `Edit — ${editingSubject.name}` : "Add New Subject"}</h3>
               <button className="modal-close-btn" onClick={closeModal}>✕</button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="modal-body">
+            <form className="subject-modal-form" onSubmit={handleSubmit(onSubmit)}>
+              <div className="modal-body subject-modal-body">
                 {apiError && (
                   <div style={{ padding: "0.6rem 0.8rem", background: "hsl(var(--danger)/0.08)", border: "1px solid hsl(var(--danger)/0.2)", borderRadius: 8, color: "hsl(var(--danger))", fontSize: "0.82rem", marginBottom: "1rem" }}>
                     {apiError}
                   </div>
                 )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div className="subject-form-grid subject-form-grid-even">
                   <div className="form-group">
                     <label className="form-label">Subject Name *</label>
                     <input type="text" className="form-input" placeholder="e.g. Mathematics" {...register("name", { required: "Name is required" })} />
@@ -265,7 +261,7 @@ export default function SubjectsClient({
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div className="subject-form-grid subject-form-grid-wide">
                   <div className="form-group">
                     <label className="form-label">Credit Hours</label>
                     <input type="number" className="form-input" min={1} max={10} {...register("creditHours", { valueAsNumber: true })} />
@@ -276,8 +272,8 @@ export default function SubjectsClient({
                   </div>
                 </div>
 
-                <div style={{ borderTop: "1px solid hsl(var(--border))", paddingTop: "1rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                <div className="subject-allocations">
+                  <div className="subject-allocations-header">
                     <div>
                       <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>Class Allocations</div>
                       <div style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>Assign this subject to sections with a teacher</div>
@@ -285,9 +281,9 @@ export default function SubjectsClient({
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => append({ sectionId: "", staffId: "" })}>+ Add</button>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <div className="subject-allocation-list">
                     {fields.map((field, index) => (
-                      <div key={field.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "0.5rem", alignItems: "end", background: "hsl(var(--bg))", padding: "0.65rem", borderRadius: 8 }}>
+                      <div key={field.id} className="subject-allocation-row">
                         <div className="form-group" style={{ margin: 0 }}>
                           <label className="form-label">Section</label>
                           <select className="form-input" {...register(`allocations.${index}.sectionId` as const, { required: true })}>
@@ -317,7 +313,7 @@ export default function SubjectsClient({
                       </div>
                     ))}
                     {fields.length === 0 && (
-                      <div style={{ textAlign: "center", padding: "1.5rem", border: "2px dashed hsl(var(--border))", borderRadius: 8, color: "hsl(var(--text-muted))", fontSize: "0.85rem" }}>
+                      <div className="subject-empty-allocation">
                         No allocations yet. Click &ldquo;+ Add&rdquo; to assign this subject to a section.
                       </div>
                     )}
