@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 interface NavItem {
   label: string;
@@ -146,16 +147,13 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
     },
     {
       section: "Payroll",
-      items: [
-        { label: "Staff Payroll", href: "/accountant/payroll", icon: "💰" },
-      ],
+      items: [{ label: "Staff Payroll", href: "/accountant/payroll", icon: "💰" }],
     },
     {
       section: "Communication",
       items: [{ label: "Announcements", href: "/accountant/announcements", icon: "📢" }],
     },
   ],
-
   LIBRARIAN: [
     { section: "Overview", items: [{ label: "Dashboard", href: "/librarian", icon: "⊞" }] },
     {
@@ -228,12 +226,13 @@ export default function Sidebar({
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "1.1rem",
             flexShrink: 0,
+            boxShadow: "0 0 16px rgba(99,102,241,0.4)",
           }}
         >
           🎓
@@ -244,15 +243,15 @@ export default function Sidebar({
               fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "0.95rem",
-              color: "white",
+              color: "var(--text-primary)",
             }}
           >
-            EduERP
+            EduSphere
           </div>
           <div
             style={{
               fontSize: "0.68rem",
-              color: "hsl(0 0% 100% / 0.4)",
+              color: "var(--text-secondary)",
               marginTop: "0.1rem",
             }}
           >
@@ -269,7 +268,12 @@ export default function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`nav-item ${pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "active" : ""}`}
+                className={`nav-item ${
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href))
+                    ? "active"
+                    : ""
+                }`}
               >
                 <span className="icon">{item.icon}</span>
                 {item.label}
@@ -282,13 +286,13 @@ export default function Sidebar({
       <div
         style={{
           padding: "1rem 1.25rem",
-          borderTop: "1px solid hsl(0 0% 100% / 0.08)",
+          borderTop: "1px solid var(--border)",
           display: "flex",
           alignItems: "center",
-          gap: "0.75rem",
+          gap: "0.6rem",
         }}
       >
-        <div className="avatar" style={{ width: 38, height: 38, fontSize: "0.875rem" }}>
+        <div className="avatar" style={{ width: 36, height: 36, fontSize: "0.8rem" }}>
           {avatarInitials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -296,7 +300,7 @@ export default function Sidebar({
             style={{
               fontSize: "0.82rem",
               fontWeight: 600,
-              color: "white",
+              color: "var(--text-primary)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -307,7 +311,7 @@ export default function Sidebar({
           <div
             style={{
               fontSize: "0.7rem",
-              color: "hsl(0 0% 100% / 0.4)",
+              color: "var(--text-secondary)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -316,7 +320,10 @@ export default function Sidebar({
             {userEmail}
           </div>
         </div>
-        <LogoutButton style={{ color: "hsl(0 0% 100% / 0.4)", fontSize: "1rem", flexShrink: 0 }} />
+        <ThemeToggle />
+        <LogoutButton
+          style={{ color: "var(--text-secondary)", fontSize: "1rem", flexShrink: 0 }}
+        />
       </div>
     </aside>
   );
