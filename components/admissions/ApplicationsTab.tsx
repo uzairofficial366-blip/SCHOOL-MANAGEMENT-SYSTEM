@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDate } from "@/lib/format";
+
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   DRAFT: { bg: "hsl(220 14% 46% / 0.12)", text: "hsl(220 14% 46%)" },
   SUBMITTED: { bg: "hsl(224 71% 55% / 0.12)", text: "hsl(224 71% 55%)" },
@@ -122,7 +124,7 @@ export default function ApplicationsTab({
                       </span>
                     </td>
                     <td style={{ fontSize: "0.8rem", color: "hsl(var(--text-muted))" }}>
-                      {new Date(app.createdAt).toLocaleDateString()}
+                      {formatDate(app.createdAt)}
                     </td>
                     <td>
                       <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); onSelect(app); }}>

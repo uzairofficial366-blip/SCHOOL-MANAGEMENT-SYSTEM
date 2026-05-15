@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatDate, formatTime } from "@/lib/format";
 import { 
   Send, 
   Search, 
@@ -24,6 +25,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
   const [newMsgBody, setNewMsgBody] = useState("");
   const [view, setView] = useState("LIST"); // LIST, CHAT, NEW
   const [search, setSearch] = useState("");
+  const [isDesktop, setIsDesktop] = useState(true);
 
 
 
@@ -45,6 +47,13 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => setIsDesktop(window.innerWidth > 768);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -102,7 +111,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
       {/* SIDEBAR */}
       <div style={{ 
         width: "350px", borderRight: "1px solid var(--border)", 
-        display: (view === "LIST" || window.innerWidth > 768) ? "flex" : "none",
+        display: (view === "LIST" || isDesktop) ? "flex" : "none",
         flexDirection: "column"
       }}>
         <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)" }}>
@@ -148,7 +157,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
                     <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>{t.user.name}</span>
-                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{new Date(t.lastMessage.createdAt).toLocaleDateString()}</span>
+                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{formatDate(t.lastMessage.createdAt)}</span>
                   </div>
                   <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {t.lastMessage.body}
@@ -167,7 +176,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
 
       {/* CHAT AREA */}
       <div style={{ 
-        flex: 1, display: (view !== "LIST" || window.innerWidth > 768) ? "flex" : "none", 
+        flex: 1, display: (view !== "LIST" || isDesktop) ? "flex" : "none", 
         flexDirection: "column", background: "hsl(var(--bg-muted)/0.3)" 
       }}>
         {view === "NEW" ? (
@@ -205,7 +214,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
           <>
             <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border)", background: "white", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setView("LIST")} style={{ display: window.innerWidth <= 768 ? "flex" : "none" }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setView("LIST")} style={{ display: isDesktop ? "none" : "flex" }}>
                   <ArrowLeft size={20} />
                 </button>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "hsl(var(--bg-muted))", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
@@ -242,7 +251,7 @@ export default function MessagesClient({ currentUserId }: { currentUserId: strin
                     {msg.body}
                   </div>
                   <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginTop: "0.4rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatTime(msg.createdAt)}
                     {msg.senderId === currentUserId && (
                       msg.isRead ? <CheckCheck size={12} className="text-primary" /> : <Check size={12} />
                     )}

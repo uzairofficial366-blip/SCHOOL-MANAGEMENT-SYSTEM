@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatMonthYear, formatTime, formatWeekday } from "@/lib/format";
 import { 
   Calendar as CalendarIcon, 
   CheckCircle, 
@@ -25,15 +26,21 @@ export default function AttendanceClient() {
   const [summary, setSummary] = useState<any>(null);
   const [overall, setOverall] = useState<string>("0");
   const [loading, setLoading] = useState(true);
-  const [viewDate, setViewDate] = useState(new Date());
+  const [viewDate, setViewDate] = useState<Date | null>(null);
 
   useEffect(() => {
+    setViewDate(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (!viewDate) return;
     fetchAttendance();
   }, [viewDate]);
 
   const fetchAttendance = async () => {
     setLoading(true);
     try {
+      if (!viewDate) return;
       const month = viewDate.getMonth();
       const year = viewDate.getFullYear();
       const res = await fetch(`/api/attendance/student?month=${month}&year=${year}`);
@@ -50,8 +57,10 @@ export default function AttendanceClient() {
     }
   };
 
-  const nextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-  const prevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  const nextMonth = () => viewDate && setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+  const prevMonth = () => viewDate && setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+
+  if (!viewDate) return <div style={{ padding: "4rem", textAlign: "center" }}>Loading attendance...</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
@@ -95,7 +104,7 @@ export default function AttendanceClient() {
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <button className="btn btn-ghost btn-sm" onClick={prevMonth}><ChevronLeft size={20} /></button>
               <span style={{ fontWeight: 700, minWidth: "120px", textAlign: "center" }}>
-                {viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                {formatMonthYear(viewDate)}
               </span>
               <button className="btn btn-ghost btn-sm" onClick={nextMonth}><ChevronRight size={20} /></button>
             </div>
@@ -117,7 +126,7 @@ export default function AttendanceClient() {
                     <div style={{ width: "60px", textAlign: "center" }}>
                       <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>{new Date(rec.date).getDate()}</div>
                       <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                        {new Date(rec.date).toLocaleString('default', { weekday: 'short' })}
+                        {formatWeekday(rec.date)}
                       </div>
                     </div>
                     
@@ -134,7 +143,7 @@ export default function AttendanceClient() {
                     </div>
 
                     <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                      {new Date(rec.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatTime(rec.createdAt)}
                     </div>
                   </div>
                 );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatDateTime } from "@/lib/format";
 
 export default function AnnouncementsList() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -43,7 +44,9 @@ export default function AnnouncementsList() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {announcements.map((ann) => {
         // Just for display logic
-        let targetLabel = "Global";
+        let targetLabel = ann.section
+          ? `${ann.grade?.name ?? "Class"} - ${ann.section.name}`
+          : ann.grade?.name ?? "Global";
         let targetColor = "var(--primary)";
         
         try {
@@ -68,7 +71,8 @@ export default function AnnouncementsList() {
               {ann.content}
             </p>
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
-              Published: {new Date(ann.publishedAt || ann.createdAt).toLocaleString()}
+              Published: {formatDateTime(ann.publishedAt || ann.createdAt)}
+              {ann.createdBy?.name ? ` by ${ann.createdBy.name}` : ""}
             </div>
           </div>
         );

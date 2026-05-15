@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { formatDate, formatPKR } from "@/lib/format";
 
-const PKR = (n: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(n);
-const fmtDate = (s: string | null) => s ? new Intl.DateTimeFormat("en-PK", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(s)) : "N/A";
+const PKR = formatPKR;
+const fmtDate = formatDate;
 
 export default function ParentDashboardClient({ data }: { data: any }) {
   if (!data || data.children.length === 0) {

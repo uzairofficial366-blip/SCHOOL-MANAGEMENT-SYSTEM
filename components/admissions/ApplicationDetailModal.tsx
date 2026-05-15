@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { formatDate } from "@/lib/format";
 
 const STATUS_ACTIONS: Record<string, { label: string; next: string; color: string }[]> = {
   DRAFT: [{ label: "Submit", next: "SUBMITTED", color: "hsl(var(--primary))" }],
@@ -90,8 +91,11 @@ export default function ApplicationDetailModal({ application, sections, onClose 
   const actions = STATUS_ACTIONS[application.status] || [];
   const currentStepIdx = STATUS_FLOW.indexOf(application.status);
   
-  // Filter sections that belong to the academic year of the cycle
-  const availableSections = sections.filter(s => s.academicYearId === application.cycle.academicYearId);
+  const cycleAcademicYearId = application.cycle?.academicYearId;
+  const availableSections = sections.filter((s) => (
+    (!cycleAcademicYearId || s.academicYearId === cycleAcademicYearId) &&
+    s.grade?.name === application.gradeAppliedFor
+  ));
 
   return (
     <div className="modal-overlay" style={{ zIndex: 250, alignItems: "flex-start", paddingTop: "2rem" }} onClick={onClose}>
@@ -165,13 +169,13 @@ export default function ApplicationDetailModal({ application, sections, onClose 
           {[
             { label: "Grade Applied", value: application.gradeAppliedFor },
             { label: "Gender", value: application.gender || "—" },
-            { label: "Date of Birth", value: application.dateOfBirth ? new Date(application.dateOfBirth).toLocaleDateString() : "—" },
+            { label: "Date of Birth", value: application.dateOfBirth ? formatDate(application.dateOfBirth) : "N/A" },
             { label: "Previous School", value: application.previousSchool || "—" },
             { label: "Parent Name", value: application.parentName },
             { label: "Parent Email", value: application.parentEmail },
             { label: "Parent Phone", value: application.parentPhone },
             { label: "Cycle", value: application.cycle?.name || "—" },
-            { label: "Submitted", value: application.submittedAt ? new Date(application.submittedAt).toLocaleDateString() : "Not yet" },
+            { label: "Submitted", value: application.submittedAt ? formatDate(application.submittedAt) : "Not yet" },
             { label: "Priority Score", value: application.priorityScore?.toString() || "0" },
           ].map((item) => (
             <div key={item.label}>
@@ -246,6 +250,11 @@ export default function ApplicationDetailModal({ application, sections, onClose 
                 <option key={s.id} value={s.id}>{s.grade.name} - {s.name}</option>
               ))}
             </select>
+            {availableSections.length === 0 && (
+              <p style={{ fontSize: "0.75rem", color: "hsl(var(--danger))", marginTop: "0.4rem" }}>
+                No sections found for {application.gradeAppliedFor} in {application.cycle.academicYear?.name || "this academic year"}. Create a section first in Classes &amp; Sections.
+              </p>
+            )}
             <p style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))", marginTop: "0.4rem" }}>
               The student will be registered and enrolled into this section for {application.cycle.academicYear?.name || "the cycle's academic year"}.
             </p>
@@ -279,3 +288,4 @@ export default function ApplicationDetailModal({ application, sections, onClose 
     </div>
   );
 }
+

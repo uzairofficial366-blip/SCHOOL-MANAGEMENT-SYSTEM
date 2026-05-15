@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/prisma";
+import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,16 @@ export async function POST(req: NextRequest) {
     }
     const tenantId = session.user?.tenantId as string;
     const body = await req.json();
+    if (!body.parentName?.trim() || !body.parentEmail?.trim() || !body.parentPhone?.trim()) {
+      return NextResponse.json({ error: "Parent name, email, and phone are required" }, { status: 400 });
+    }
+
+    if (!body.parentPassword) {
+      return NextResponse.json({ error: "Parent portal password is required" }, { status: 400 });
+    }
+
+    const parentEmail = String(body.parentEmail).trim().toLowerCase();
+    const parentPasswordHash = await bcrypt.hash(String(body.parentPassword), 10);
 
     // Generate unique application number
     const year = new Date().getFullYear();
@@ -75,11 +86,14 @@ export async function POST(req: NextRequest) {
         dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
         gender: body.gender,
         parentName: body.parentName,
-        parentEmail: body.parentEmail,
+        parentEmail,
         parentPhone: body.parentPhone,
         gradeAppliedFor: body.gradeAppliedFor,
         previousSchool: body.previousSchool,
-        formData: body.formData || {},
+        formData: {
+          ...(body.formData || {}),
+          parentPasswordHash,
+        },
         status: body.status || "DRAFT",
         siblingInfo: body.siblingInfo,
       },

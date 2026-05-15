@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
+type ParentOption = {
+  parentId: string;
+  name: string;
+  email: string;
+  phone: string;
+  relationship: string;
+};
+
 export default function NewStudentModal({ 
   onClose, 
   grades, 
@@ -29,49 +37,75 @@ export default function NewStudentModal({
     email: "",
     dateOfBirth: "",
     gender: "",
-    parentName: "",
-    parentPhone: "",
     gradeId: "",
     sectionId: "",
     academicYearId: currentAcademicYear
   });
+  const [parentMode, setParentMode] = useState<"create" | "existing">("create");
+  const [parentForm, setParentForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    relationship: "Father",
+  });
+  const [existingParentId, setExistingParentId] = useState("");
+  const [parentSearch, setParentSearch] = useState("");
+  const [parentOptions, setParentOptions] = useState<ParentOption[]>([]);
 
   const availableSections = sections.filter(s => s.gradeId === form.gradeId && s.academicYearId === form.academicYearId);
+
+  useEffect(() => {
+    if (parentMode !== "existing") return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/parents?search=${encodeURIComponent(parentSearch)}`, {
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (res.ok) setParentOptions(data.parents || []);
+      } catch (err: any) {
+        if (err.name !== "AbortError") setParentOptions([]);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [parentMode, parentSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (parentMode === "create") {
+      if (!parentForm.name.trim()) return setError("Parent name is required");
+      if (!parentForm.email.trim()) return setError("Parent email/login ID is required");
+      if (!parentForm.password) return setError("Parent password is required");
+    }
+    if (parentMode === "existing" && !existingParentId) {
+      return setError("Select an existing parent account");
+    }
+
     setLoading(true);
 
     try {
-      // 1. Create Student
       const res = await fetch("/api/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          student: form,
+          parentMode,
+          parent: parentMode === "create" ? parentForm : undefined,
+          existingParentId: parentMode === "existing" ? existingParentId : undefined,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create student");
-
-      // 2. Enroll Student if section is selected
-      if (form.sectionId && form.academicYearId) {
-        const enrollRes = await fetch("/api/enrollments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            studentId: data.student.id,
-            sectionId: form.sectionId,
-            academicYearId: form.academicYearId
-          })
-        });
-        
-        const enrollData = await enrollRes.json();
-        if (!enrollRes.ok) {
-          // Note: The student is created, but enrollment failed
-          throw new Error(`Student created, but enrollment failed: ${enrollData.error}`);
-        }
-      }
 
       router.refresh();
       onClose();
@@ -170,17 +204,59 @@ export default function NewStudentModal({
           </div>
 
           <div style={{ padding: "1rem", background: "hsl(var(--bg))", borderRadius: 8, marginTop: "0.5rem" }}>
-            <div style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>Parent/Guardian Details (Optional)</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div className="form-group">
-                <label className="form-label">Parent Name</label>
-                <input className="form-input" value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} placeholder="e.g. Muhammad Ali" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Parent Phone</label>
-                <input className="form-input" value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} placeholder="+92 300 1234567" />
-              </div>
+            <div style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>Parent/Guardian Login</div>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+              <button type="button" className={`btn btn-sm ${parentMode === "create" ? "btn-primary" : "btn-ghost"}`} onClick={() => setParentMode("create")}>Create New Parent</button>
+              <button type="button" className={`btn btn-sm ${parentMode === "existing" ? "btn-primary" : "btn-ghost"}`} onClick={() => setParentMode("existing")}>Select Existing Parent</button>
             </div>
+
+            {parentMode === "create" ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div className="form-group">
+                  <label className="form-label">Parent Name *</label>
+                  <input required className="form-input" value={parentForm.name} onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })} placeholder="e.g. Muhammad Ali" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Parent Email/Login ID *</label>
+                  <input required type="email" className="form-input" value={parentForm.email} onChange={(e) => setParentForm({ ...parentForm, email: e.target.value })} placeholder="parent@school.edu" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Parent Phone</label>
+                  <input className="form-input" value={parentForm.phone} onChange={(e) => setParentForm({ ...parentForm, phone: e.target.value })} placeholder="+92 300 1234567" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Parent Password *</label>
+                  <input required type="password" className="form-input" value={parentForm.password} onChange={(e) => setParentForm({ ...parentForm, password: e.target.value })} placeholder="Create password" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Relationship *</label>
+                  <select required className="form-input" value={parentForm.relationship} onChange={(e) => setParentForm({ ...parentForm, relationship: e.target.value })}>
+                    <option>Father</option>
+                    <option>Mother</option>
+                    <option>Guardian</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div className="form-group">
+                  <label className="form-label">Search Parent</label>
+                  <input className="form-input" value={parentSearch} onChange={(e) => setParentSearch(e.target.value)} placeholder="Search by name, email, or phone" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Existing Parent Account *</label>
+                  <select required className="form-input" value={existingParentId} onChange={(e) => setExistingParentId(e.target.value)}>
+                    <option value="">Select parent...</option>
+                    {parentOptions.map((parent) => (
+                      <option key={parent.parentId} value={parent.parentId}>
+                        {parent.name} - {parent.email || parent.phone} ({parent.relationship})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid hsl(var(--border))" }}>

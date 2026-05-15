@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -29,6 +30,16 @@ interface Props {
 }
 
 export default function AdmissionStats({ stats, applications }: Props) {
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setNow(new Date());
+  }, []);
+
+  if (!mounted || !now) return null;
+
   const pieData = Object.entries(stats.statusCounts)
     .filter(([, v]) => v > 0)
     .map(([name, value]) => ({ name: name.replace("_", " "), value, color: STATUS_COLORS[name] || "#94a3b8" }));
@@ -43,7 +54,6 @@ export default function AdmissionStats({ stats, applications }: Props) {
     .map(([name, count]) => ({ name, count }));
 
   // Weekly trend (last 4 weeks)
-  const now = new Date();
   const weeklyData = [3, 2, 1, 0].map((weeksAgo) => {
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - (weeksAgo + 1) * 7);

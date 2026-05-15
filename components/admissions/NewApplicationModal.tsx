@@ -22,6 +22,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
     parentName: "",
     parentEmail: "",
     parentPhone: "",
+    parentPassword: "",
     gradeAppliedFor: "",
     previousSchool: "",
   });
@@ -47,6 +48,7 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
       if (!form.parentName.trim()) return "Parent name is required";
       if (!form.parentEmail.trim()) return "Parent email is required";
       if (!form.parentPhone.trim()) return "Parent phone is required";
+      if (!form.parentPassword) return "Parent portal password is required";
     }
     return "";
   };
@@ -189,6 +191,10 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
               <label className="form-label">Parent Phone *</label>
               <input className="form-input" type="tel" value={form.parentPhone} onChange={(e) => updateField("parentPhone", e.target.value)} placeholder="+92 300 1234567" />
             </div>
+            <div className="form-group">
+              <label className="form-label">Parent Portal Password *</label>
+              <input className="form-input" type="password" value={form.parentPassword} onChange={(e) => updateField("parentPassword", e.target.value)} placeholder="Create parent login password" />
+            </div>
           </div>
         )}
 
@@ -204,8 +210,9 @@ export default function NewApplicationModal({ cycles, grades, onClose }: Props) 
               { label: "DOB", value: form.dateOfBirth || "—" },
               { label: "Previous School", value: form.previousSchool || "—" },
               { label: "Parent", value: form.parentName },
-              { label: "Email", value: form.parentEmail },
+              { label: "Parent ID", value: form.parentEmail },
               { label: "Phone", value: form.parentPhone },
+              { label: "Portal Password", value: form.parentPassword ? "Set" : "Not set" },
             ].map((item) => (
               <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.4rem 0.75rem", background: "hsl(var(--bg))", borderRadius: 8, fontSize: "0.82rem" }}>
                 <span style={{ color: "hsl(var(--text-muted))", fontWeight: 600 }}>{item.label}</span>

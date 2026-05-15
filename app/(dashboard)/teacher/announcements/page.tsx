@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
-import AnnouncementsList from "@/components/announcements/AnnouncementsList";
+import TeacherAnnouncementsClient from "./TeacherAnnouncementsClient";
 
 export const metadata = { title: "Announcements" };
 
@@ -13,7 +13,7 @@ export default async function TeacherAnnouncementsPage() {
     <>
       <Topbar title="School Announcements" breadcrumbs={[{ label: "Home" }, { label: "Teacher", href: "/teacher" }, { label: "Announcements" }]} />
       <div className="page-body fade-up">
-        <AnnouncementsList />
+        <TeacherAnnouncementsClient />
       </div>
     </>
   );

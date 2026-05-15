@@ -39,9 +39,9 @@ const STATUS_OPTIONS: { value: Exclude<AttendanceChoice, "">; label: string }[] 
 ];
 
 function formatCutoff(hour: number, minute: number) {
-  const value = new Date();
-  value.setHours(hour, minute, 0, 0);
-  return value.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
 }
 
 export default function TeacherAttendanceClient({

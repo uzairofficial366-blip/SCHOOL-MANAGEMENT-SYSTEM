@@ -33,7 +33,14 @@ export default async function AdmissionsPage() {
     prisma.admissionApplication.findMany({
       where: { tenantId },
       include: {
-        cycle: { select: { name: true, status: true } },
+        cycle: {
+          select: {
+            name: true,
+            status: true,
+            academicYearId: true,
+            academicYear: { select: { name: true } },
+          },
+        },
         documents: { select: { id: true, docType: true, status: true } },
         reviews: {
           select: { id: true, decision: true, completedAt: true },

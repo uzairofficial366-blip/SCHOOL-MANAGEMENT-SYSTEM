@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import LogoutButton from "@/components/auth/LogoutButton";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 
@@ -41,6 +42,7 @@ const NAV_BY_ROLE: Record<string, NavSection[]> = {
         { label: "Timetable", href: "/admin/timetable", icon: "🗓️" },
         { label: "Class Assignment", href: "/admin/assignments", icon: "🤝" },
         { label: "Results", href: "/admin/results", icon: "📄" },
+        { label: "DMC / Result Card", href: "/admin/dmc", icon: "RC" },
       ],
     },
     {
@@ -216,7 +218,12 @@ export default function Sidebar({
   tenantName,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const sections = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.STUDENT;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <aside className="sidebar">
@@ -269,8 +276,10 @@ export default function Sidebar({
                 key={item.href}
                 href={item.href}
                 className={`nav-item ${
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(item.href))
+                  mounted && (
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname.startsWith(item.href))
+                  )
                     ? "active"
                     : ""
                 }`}

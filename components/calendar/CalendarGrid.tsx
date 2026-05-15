@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -47,6 +47,12 @@ interface Props {
 }
 
 export default function CalendarGrid({ events, year, month, onPrevMonth, onNextMonth, onDeleteEvent, isAdmin }: Props) {
+  const [today, setToday] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setToday(new Date());
+  }, []);
+
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -75,8 +81,7 @@ export default function CalendarGrid({ events, year, month, onPrevMonth, onNextM
     return days;
   }, [events, year, month]);
 
-  const today = new Date();
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const isCurrentMonth = today ? today.getFullYear() === year && today.getMonth() === month : false;
 
   return (
     <div>
@@ -99,7 +104,7 @@ export default function CalendarGrid({ events, year, month, onPrevMonth, onNextM
       {/* Calendar grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", background: "#eaeaea", border: "1px solid #eaeaea", borderRadius: "8px", overflow: "hidden" }}>
         {calendarDays.map((day, i) => {
-          const isToday = isCurrentMonth && day.date === today.getDate();
+          const isToday = Boolean(today && isCurrentMonth && day.date === today.getDate());
           return (
             <div
               key={i}

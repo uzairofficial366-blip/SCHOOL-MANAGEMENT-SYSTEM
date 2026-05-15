@@ -17,19 +17,12 @@ export default function LogoutButton({ style, className, children }: LogoutButto
     setIsLoggingOut(true);
 
     try {
-      // 1. Clear any localStorage / sessionStorage
+      // Keep localStorage preferences such as theme, but clear tab-scoped data.
       try {
-        localStorage.clear();
         sessionStorage.clear();
-      } catch (_) {}
+      } catch {}
 
-      // 2. Perform signOut without automatic redirect
-      // This clears the session cookies
-      await signOut({ redirect: false });
-
-      // 3. Manual redirect to login page (relative path)
-      // This avoids issues with NEXTAUTH_URL being set to localhost in production
-      window.location.href = "/login";
+      await signOut({ callbackUrl: "/login" });
     } catch (err) {
       console.error("Logout error:", err);
       // Fallback: hard-redirect to login

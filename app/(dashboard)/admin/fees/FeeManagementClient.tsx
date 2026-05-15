@@ -16,6 +16,8 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }
 interface FeePayment {
   id: string;
   amount: number;
+  discount?: number;
+  discountRemarks?: string | null;
   amountPaid: number;
   dueDate: string;
   paymentDate: string | null;
@@ -33,7 +35,7 @@ interface Student {
   feePayments: FeePayment[];
 }
 
-export default function FeeManagementClient({ feeStructures }: { feeStructures: { id: string; name: string; amount: number; frequency: string }[] }) {
+export default function FeeManagementClient({ feeStructures }: { feeStructures: { id: string; name: string; amount: number; frequency: string; gradeName?: string | null }[] }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -43,8 +45,11 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
   const [payTarget, setPayTarget] = useState<FeePayment | null>(null);
   const [payMethod, setPayMethod] = useState("CASH");
   const [payTxId, setPayTxId] = useState("");
+  const [payDiscountType, setPayDiscountType] = useState<"FIXED" | "PERCENTAGE">("FIXED");
+  const [payDiscountValue, setPayDiscountValue] = useState("0");
+  const [payDiscountRemarks, setPayDiscountRemarks] = useState("");
   const [saving, setSaving] = useState(false);
-  const [newFee, setNewFee] = useState({ feeStructureId: "", dueDate: "", amount: "", amountPaid: "0", method: "CASH", status: "PENDING" });
+  const [newFee, setNewFee] = useState({ feeStructureId: "", dueDate: "", amount: "", amountPaid: "0", method: "CASH", status: "PENDING", discountType: "FIXED", discountValue: "0", discountRemarks: "" });
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -77,12 +82,24 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
 
   const handleMarkPaid = async () => {
     if (!payTarget) return;
+    const discountValue = Number(payDiscountValue || 0);
+    const discount = payDiscountType === "PERCENTAGE" ? Number(payTarget.amount) * (discountValue / 100) : discountValue;
+    const netPayable = Math.max(Number(payTarget.amount) - discount, 0);
     setSaving(true);
     try {
       const res = await fetch("/api/fees", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: payTarget.id, amountPaid: payTarget.amount, method: payMethod, transactionId: payTxId, status: "PAID" }),
+        body: JSON.stringify({
+          id: payTarget.id,
+          amountPaid: netPayable,
+          method: payMethod,
+          transactionId: payTxId,
+          status: "PAID",
+          discountType: payDiscountType,
+          discountValue,
+          discountRemarks: payDiscountRemarks,
+        }),
       });
       if (res.ok) {
         setIsPayModalOpen(false);
@@ -113,11 +130,14 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
           dueDate: newFee.dueDate,
           method: newFee.method,
           status: newFee.status,
+          discountType: newFee.discountType,
+          discountValue: newFee.discountValue,
+          discountRemarks: newFee.discountRemarks,
         }),
       });
       if (res.ok) {
         setIsAddFeeModalOpen(false);
-        setNewFee({ feeStructureId: "", dueDate: "", amount: "", amountPaid: "0", method: "CASH", status: "PENDING" });
+        setNewFee({ feeStructureId: "", dueDate: "", amount: "", amountPaid: "0", method: "CASH", status: "PENDING", discountType: "FIXED", discountValue: "0", discountRemarks: "" });
         fetchStudents();
       }
     } catch (err) { console.error(err); }
@@ -130,7 +150,7 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
 
   const paidCount = students.filter(s => getStudentStatus(s) === "PAID").length;
   const unpaidCount = students.filter(s => getStudentStatus(s) === "UNPAID" || getStudentStatus(s) === "PARTIAL").length;
-  const totalDue = students.reduce((sum, s) => sum + s.feePayments.filter(p => p.status !== "PAID" && p.status !== "WAIVED").reduce((a, p) => a + (Number(p.amount) - Number(p.amountPaid)), 0), 0);
+  const totalDue = students.reduce((sum, s) => sum + s.feePayments.filter(p => p.status !== "PAID" && p.status !== "WAIVED").reduce((a, p) => a + (Number(p.amount) - Number(p.discount || 0) - Number(p.amountPaid)), 0), 0);
 
   return (
     <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
@@ -255,6 +275,7 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
                             {payment.paymentDate && ` • Paid: ${new Date(payment.paymentDate).toLocaleDateString()}`}
                           </div>
                           {payment.method && <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Method: {payment.method}</div>}
+                          {Number(payment.discount || 0) > 0 && <div style={{ fontSize: "0.7rem", color: "#15803d" }}>Discount: Rs. {Number(payment.discount).toLocaleString()}{payment.discountRemarks ? ` (${payment.discountRemarks})` : ""}</div>}
                           {payment.transactionId && <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>TxID: {payment.transactionId}</div>}
                         </div>
                         <div style={{ textAlign: "right" }}>
@@ -262,7 +283,7 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
                           <span style={{ padding: "0.15rem 0.5rem", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
                           {(payment.status === "PENDING" || payment.status === "OVERDUE" || payment.status === "PARTIAL") && (
                             <button
-                              onClick={() => { setPayTarget(payment); setPayMethod("CASH"); setPayTxId(""); setIsPayModalOpen(true); }}
+                              onClick={() => { setPayTarget(payment); setPayMethod("CASH"); setPayTxId(""); setPayDiscountType("FIXED"); setPayDiscountValue(String(payment.discount || 0)); setPayDiscountRemarks(payment.discountRemarks || ""); setIsPayModalOpen(true); }}
                               style={{ display: "block", marginTop: "0.4rem", fontSize: "0.7rem", padding: "0.2rem 0.5rem", background: "#dcfce7", color: "#15803d", border: "1px solid #86efac", borderRadius: "4px", cursor: "pointer", fontWeight: 600 }}
                             >
                               Mark Paid
@@ -303,6 +324,23 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
                 <option value="RAZORPAY">Razorpay</option>
               </select>
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-group">
+                <label>Discount Type</label>
+                <select className="form-control" value={payDiscountType} onChange={e => setPayDiscountType(e.target.value as "FIXED" | "PERCENTAGE")}>
+                  <option value="FIXED">Fixed Amount</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Discount</label>
+                <input className="form-control" type="number" min="0" value={payDiscountValue} onChange={e => setPayDiscountValue(e.target.value)} />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: "1rem" }}>
+              <label>Discount Remarks</label>
+              <input className="form-control" placeholder="Reason for discount" value={payDiscountRemarks} onChange={e => setPayDiscountRemarks(e.target.value)} />
+            </div>
             <div className="form-group" style={{ marginBottom: "1.5rem" }}>
               <label>Transaction ID (Optional)</label>
               <input className="form-control" placeholder="e.g. TXN-001" value={payTxId} onChange={e => setPayTxId(e.target.value)} />
@@ -330,7 +368,7 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
                 setNewFee({ ...newFee, feeStructureId: e.target.value, amount: fs ? String(fs.amount) : "" });
               }}>
                 <option value="">Select Fee Type</option>
-                {feeStructures.map(fs => <option key={fs.id} value={fs.id}>{fs.name} — Rs. {Number(fs.amount).toLocaleString()}</option>)}
+                {feeStructures.map(fs => <option key={fs.id} value={fs.id}>{fs.gradeName ? `${fs.gradeName} - ` : ""}{fs.name} — Rs. {Number(fs.amount).toLocaleString()}</option>)}
               </select>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
@@ -342,6 +380,23 @@ export default function FeeManagementClient({ feeStructures }: { feeStructures: 
                 <label>Amount Paid</label>
                 <input className="form-control" type="number" value={newFee.amountPaid} onChange={e => setNewFee({ ...newFee, amountPaid: e.target.value })} />
               </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-group">
+                <label>Discount Type</label>
+                <select className="form-control" value={newFee.discountType} onChange={e => setNewFee({ ...newFee, discountType: e.target.value })}>
+                  <option value="FIXED">Fixed Amount</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Discount</label>
+                <input className="form-control" type="number" min="0" value={newFee.discountValue} onChange={e => setNewFee({ ...newFee, discountValue: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: "1rem" }}>
+              <label>Discount Remarks</label>
+              <input className="form-control" placeholder="Reason for discount" value={newFee.discountRemarks} onChange={e => setNewFee({ ...newFee, discountRemarks: e.target.value })} />
             </div>
             <div className="form-group" style={{ marginBottom: "1rem" }}>
               <label>Due Date *</label>

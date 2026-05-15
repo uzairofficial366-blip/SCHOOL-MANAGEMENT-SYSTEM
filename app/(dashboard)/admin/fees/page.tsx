@@ -16,6 +16,7 @@ export default async function FeesAdminPage() {
 
   const feeStructures = await prisma.feeStructure.findMany({
     where: { tenantId, deletedAt: null },
+    include: { grade: { select: { name: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -23,7 +24,7 @@ export default async function FeesAdminPage() {
     <>
       <Topbar title="Fee Management" breadcrumbs={[{ label: "Home" }, { label: "Admin", href: "/admin" }, { label: "Fees" }]} />
       <div className="page-body fade-up">
-        <FeeManagementClient feeStructures={feeStructures.map(f => ({ ...f, amount: Number(f.amount) }))} />
+        <FeeManagementClient feeStructures={feeStructures.map(f => ({ ...f, amount: Number(f.amount), gradeName: f.grade?.name ?? null }))} />
       </div>
     </>
   );

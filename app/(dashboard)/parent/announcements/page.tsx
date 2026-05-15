@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import Topbar from "@/components/layout/Topbar";
-import AnnouncementsList from "@/components/announcements/AnnouncementsList";
+import ParentModuleClient from "@/components/parent/ParentModuleClient";
 
 export const metadata = { title: "Announcements" };
+export const dynamic = "force-dynamic";
 
 export default async function ParentAnnouncementsPage() {
   const session = await auth();
@@ -13,7 +14,7 @@ export default async function ParentAnnouncementsPage() {
     <>
       <Topbar title="School Announcements" breadcrumbs={[{ label: "Home" }, { label: "Parent", href: "/parent" }, { label: "Announcements" }]} />
       <div className="page-body fade-up">
-        <AnnouncementsList />
+        <ParentModuleClient endpoint="/api/parent/announcements" type="announcements" />
       </div>
     </>
   );

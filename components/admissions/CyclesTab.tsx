@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/format";
+
 const CYCLE_STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   DRAFT: { bg: "hsl(220 14% 46% / 0.12)", text: "hsl(220 14% 46%)", label: "Draft" },
   OPEN: { bg: "hsl(142 71% 45% / 0.12)", text: "hsl(142 71% 45%)", label: "Open" },
@@ -13,6 +16,16 @@ interface Props {
 }
 
 export default function CyclesTab({ cycles, onNewCycle }: Props) {
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setNow(new Date());
+  }, []);
+
+  if (!mounted || !now) return null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -30,7 +43,6 @@ export default function CyclesTab({ cycles, onNewCycle }: Props) {
             const isFull = utilization >= 100;
             const startDate = new Date(cycle.startDate);
             const endDate = new Date(cycle.endDate);
-            const now = new Date();
             const totalDays = Math.max(1, (endDate.getTime() - startDate.getTime()) / 86400000);
             const elapsed = Math.max(0, (now.getTime() - startDate.getTime()) / 86400000);
             const progress = Math.min(100, Math.round((elapsed / totalDays) * 100));
@@ -64,12 +76,12 @@ export default function CyclesTab({ cycles, onNewCycle }: Props) {
                 <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", fontSize: "0.8rem" }}>
                   <div>
                     <div style={{ color: "hsl(var(--text-muted))", fontSize: "0.72rem", fontWeight: 600 }}>START</div>
-                    <div style={{ fontWeight: 600 }}>{startDate.toLocaleDateString()}</div>
+                    <div style={{ fontWeight: 600 }}>{formatDate(cycle.startDate)}</div>
                   </div>
                   <div style={{ color: "hsl(var(--text-muted))" }}>→</div>
                   <div>
                     <div style={{ color: "hsl(var(--text-muted))", fontSize: "0.72rem", fontWeight: 600 }}>END</div>
-                    <div style={{ fontWeight: 600 }}>{endDate.toLocaleDateString()}</div>
+                    <div style={{ fontWeight: 600 }}>{formatDate(cycle.endDate)}</div>
                   </div>
                 </div>
 

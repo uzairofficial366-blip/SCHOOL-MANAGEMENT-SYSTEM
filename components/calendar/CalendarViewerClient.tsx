@@ -3,15 +3,16 @@
 
 import { useState, useEffect } from "react";
 import CalendarGrid from "./CalendarGrid";
+import { formatDate } from "@/lib/format";
 
 export default function CalendarViewerClient() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState<number | null>(null);
+  const [month, setMonth] = useState<number | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = async () => {
+    if (year === null || month === null) return;
     Promise.resolve().then(() => setLoading(true));
     try {
       const m = `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -25,16 +26,23 @@ export default function CalendarViewerClient() {
     }
   };
 
-   
+  useEffect(() => {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+  }, []);
+
   useEffect(() => {
     fetchEvents();
   }, [year, month]);
 
   const onPrevMonth = () => {
+    if (year === null || month === null) return;
     if (month === 0) { setMonth(11); setYear(year - 1); }
     else setMonth(month - 1);
   };
   const onNextMonth = () => {
+    if (year === null || month === null) return;
     if (month === 11) { setMonth(0); setYear(year + 1); }
     else setMonth(month + 1);
   };
@@ -46,7 +54,7 @@ export default function CalendarViewerClient() {
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>View upcoming events, holidays, and important dates.</p>
       </div>
 
-      {loading ? (
+      {loading || year === null || month === null ? (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading calendar...</div>
       ) : (
         <CalendarGrid
@@ -69,7 +77,7 @@ export default function CalendarViewerClient() {
                 <div>
                   <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{ev.title}</div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    {new Date(ev.startDate).toLocaleDateString()} — {new Date(ev.endDate).toLocaleDateString()}
+                    {formatDate(ev.startDate)} - {formatDate(ev.endDate)}
                   </div>
                 </div>
               </div>

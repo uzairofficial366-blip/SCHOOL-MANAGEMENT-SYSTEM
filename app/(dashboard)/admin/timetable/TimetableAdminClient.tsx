@@ -48,6 +48,15 @@ export default function TimetableAdminClient({ sections, subjects, staff }: { se
 
   const onSubmit = async (data: any) => {
     setApiError("");
+    const overlaps = slots.some(slot =>
+      Number(slot.dayOfWeek) === Number(data.dayOfWeek) &&
+      slot.startTime < data.endTime &&
+      slot.endTime > data.startTime
+    );
+    if (overlaps) {
+      setApiError("This section already has a class during this time. Delete the existing slot before adding a new one.");
+      return;
+    }
     try {
       const res = await fetch("/api/timetable", {
         method: "POST",

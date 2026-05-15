@@ -45,11 +45,11 @@ function LoginForm() {
   };
 
   const handleRoleClick = async (role: string) => {
-    const email = `${role.toLowerCase()}@demo-school.edu`;
+    const email = role === "Parent" ? "parent1@demo-school.edu" : `${role.toLowerCase()}@demo-school.edu`;
     const updatedForm = {
       tenantSlug: "demo-school",
       email: email,
-      password: "Admin@1234",
+      password: role === "Parent" ? "Parent@1234" : "Admin@1234",
       totpCode: ""
     };
     setForm(updatedForm);

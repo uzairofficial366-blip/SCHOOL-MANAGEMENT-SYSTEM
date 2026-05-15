@@ -4,29 +4,32 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
 
-const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
+const ThemeCtx = createContext<{ theme: Theme; mounted: boolean; toggle: () => void }>({
   theme: "light",
+  mounted: false,
   toggle: () => {},
 });
 
+function applyTheme(t: Theme) {
+  const html = document.documentElement;
+  if (t === "dark") {
+    html.classList.add("dark");
+  } else {
+    html.classList.remove("dark");
+  }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem("eduerp-theme") as Theme | null;
     const resolved = saved ?? "light";
     setTheme(resolved);
     applyTheme(resolved);
   }, []);
-
-  function applyTheme(t: Theme) {
-    const html = document.documentElement;
-    if (t === "dark") {
-      html.classList.add("dark");
-    } else {
-      html.classList.remove("dark");
-    }
-  }
 
   function toggle() {
     setTheme((prev) => {
@@ -38,7 +41,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ThemeCtx.Provider value={{ theme, toggle }}>
+    <ThemeCtx.Provider value={{ theme, mounted, toggle }}>
       {children}
     </ThemeCtx.Provider>
   );

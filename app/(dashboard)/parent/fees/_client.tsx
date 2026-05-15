@@ -1,6 +1,7 @@
 /* eslint-disable */
 "use client";
 import { useState, useEffect } from "react";
+import { formatDate, formatPKR } from "@/lib/format";
 
 interface LineItem { id: string; description: string; amount: number; discountAmount: number; discountRemarks: string | null; netAmount: number; }
 interface Payment { id: string; amountPaid: number; paymentDate: string | null; method: string | null; transactionId: string | null; status: string; }
@@ -8,8 +9,8 @@ interface Invoice { id: string; invoiceNo: string; periodLabel: string; issueDat
 interface Discount { name: string; type: string; percentage: number; }
 interface Child { id: string; name: string; admissionNo: string; grade: string; section: string; outstanding: number; totalPaid: number; overdueCount: number; overdueAmount: number; discounts: Discount[]; invoices: Invoice[]; }
 
-const PKR = (n: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(n);
-const fmtDate = (s: string | null) => s ? new Intl.DateTimeFormat("en-PK", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(s)) : "N/A";
+const PKR = formatPKR;
+const fmtDate = formatDate;
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   PAID:    { bg: "#dcfce7", color: "#15803d" },
@@ -168,10 +169,16 @@ function PaymentModal({ invoice, onClose }: { invoice: Invoice; onClose: () => v
 function InvoiceCard({ invoice, childId }: { invoice: Invoice; childId: string }) {
   const [expanded, setExpanded] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const st = STATUS_STYLE[invoice.status] ?? STATUS_STYLE.PENDING;
   const remaining = invoice.netDue - invoice.amountPaid;
-  const daysOverdue = invoice.status !== "PAID" && new Date(invoice.dueDate) < new Date()
-    ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / 86400000) : 0;
+  const dueMs = Date.parse(invoice.dueDate);
+  const daysOverdue = nowMs !== null && invoice.status !== "PAID" && dueMs < nowMs
+    ? Math.floor((nowMs - dueMs) / 86400000) : 0;
+
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
 
   return (
     <>

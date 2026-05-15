@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/prisma";
+import { findTimetableConflicts, isValidTimeRange, timetableConflictMessage } from "@/lib/timetable-conflicts";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+const slotSchema = z.object({
+  sectionId: z.string().min(1),
+  subjectId: z.string().min(1),
+  staffId: z.string().min(1),
+  dayOfWeek: z.coerce.number().int().min(0).max(6),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  room: z.string().trim().optional().nullable(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -77,28 +89,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const tenantId = session.user?.tenantId as string;
-    const body = await req.json();
-
-    const { sectionId, subjectId, staffId, dayOfWeek, startTime, endTime, room } = body;
-
-    if (!sectionId || !subjectId || !staffId || dayOfWeek === undefined || !startTime || !endTime) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const parsed = slotSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid timetable slot details" }, { status: 400 });
     }
 
-    // Optional: Check for conflicts (same teacher same time, or same room same time)
-    const existingTeacherSlot = await prisma.timetableSlot.findFirst({
-      where: {
-        tenantId, staffId, dayOfWeek: Number(dayOfWeek),
-        OR: [
-          { startTime: { lte: startTime }, endTime: { gt: startTime } },
-          { startTime: { lt: endTime }, endTime: { gte: endTime } },
-          { startTime: { gte: startTime }, endTime: { lte: endTime } }
-        ]
-      }
-    });
+    const { sectionId, subjectId, staffId, dayOfWeek, startTime, endTime, room } = parsed.data;
+    if (!isValidTimeRange(startTime, endTime)) {
+      return NextResponse.json({ error: "End time must be after start time." }, { status: 400 });
+    }
 
-    if (existingTeacherSlot) {
-      return NextResponse.json({ error: "Teacher is already booked for this time slot" }, { status: 400 });
+    const [section, subject, staffMember] = await Promise.all([
+      prisma.section.findFirst({ where: { id: sectionId, tenantId, deletedAt: null } }),
+      prisma.subject.findFirst({ where: { id: subjectId, tenantId, deletedAt: null } }),
+      prisma.staff.findFirst({ where: { id: staffId, tenantId, deletedAt: null } }),
+    ]);
+    if (!section || !subject || !staffMember) {
+      return NextResponse.json({ error: "Selected section, subject, or teacher was not found." }, { status: 404 });
+    }
+
+    const conflictMessage = timetableConflictMessage(await findTimetableConflicts({
+      tenantId,
+      sectionId,
+      staffId,
+      dayOfWeek,
+      startTime,
+      endTime,
+      room,
+    }));
+    if (conflictMessage) {
+      return NextResponse.json({ error: conflictMessage }, { status: 409 });
     }
 
     const slot = await prisma.timetableSlot.create({
@@ -107,10 +127,10 @@ export async function POST(req: NextRequest) {
         sectionId,
         subjectId,
         staffId,
-        dayOfWeek: Number(dayOfWeek),
+        dayOfWeek,
         startTime,
         endTime,
-        room
+        room: room?.trim() || null
       },
       include: {
         section: { 

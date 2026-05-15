@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
+import { formatDate } from "@/lib/format";
 
 const EVENT_TYPES = [
   { value: "PARENT_TEACHER_MEETING", label: "Parents Teacher Meeting" },
@@ -15,9 +16,8 @@ const EVENT_TYPES = [
 ];
 
 export default function CalendarAdminClient() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState<number | null>(null);
+  const [month, setMonth] = useState<number | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +39,7 @@ export default function CalendarAdminClient() {
   });
 
   const fetchEvents = async () => {
+    if (year === null || month === null) return;
     setLoading(true);
     try {
       const m = `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -53,14 +54,22 @@ export default function CalendarAdminClient() {
   };
 
   useEffect(() => {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+  }, []);
+
+  useEffect(() => {
     fetchEvents(); // eslint-disable-line react-hooks/set-state-in-effect
   }, [year, month]);
 
   const onPrevMonth = () => {
+    if (year === null || month === null) return;
     if (month === 0) { setMonth(11); setYear(year - 1); }
     else setMonth(month - 1);
   };
   const onNextMonth = () => {
+    if (year === null || month === null) return;
     if (month === 11) { setMonth(0); setYear(year + 1); }
     else setMonth(month + 1);
   };
@@ -132,7 +141,7 @@ export default function CalendarAdminClient() {
         <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>+ Add Event</button>
       </div>
 
-      {loading ? (
+      {loading || year === null || month === null ? (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading calendar...</div>
       ) : (
         <CalendarGrid
@@ -156,7 +165,7 @@ export default function CalendarAdminClient() {
                 <div>
                   <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{ev.title}</div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    {new Date(ev.startDate).toLocaleDateString()} — {new Date(ev.endDate).toLocaleDateString()}
+                    {formatDate(ev.startDate)} - {formatDate(ev.endDate)}
                   </div>
                 </div>
                 <span style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem", background: "#eaeaea", borderRadius: "4px" }}>
@@ -245,3 +254,4 @@ export default function CalendarAdminClient() {
     </div>
   );
 }
+

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/prisma";
+import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -76,71 +78,133 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const application = await prisma.admissionApplication.update({
-      where: { id },
-      data: updateData,
-    });
-
-    // If approved, increment filled seats
-    if (body.status === "APPROVED" && currentApp.status !== "APPROVED") {
-      await prisma.admissionCycle.update({
-        where: { id: application.cycleId },
-        data: { filledSeats: { increment: 1 } },
-      });
-    }
-
-    // Auto-enroll into People (Student) if transitioning to ENROLLED
-    if (body.status === "ENROLLED" && currentApp.status !== "ENROLLED") {
-      const studentCount = await prisma.student.count({ where: { tenantId } });
-      const admissionNo = `STD-${new Date().getFullYear()}-${String(studentCount + 1).padStart(4, "0")}`;
-      
-      const user = await prisma.user.create({
-        data: {
-          tenantId,
-          name: application.studentName,
-          email: `${admissionNo.toLowerCase()}@school.edu`,
-          role: "STUDENT",
-        }
+    const result = await prisma.$transaction(async (tx) => {
+      const application = await tx.admissionApplication.update({
+        where: { id },
+        data: updateData,
       });
 
-      const student = await prisma.student.create({
-        data: {
-          tenantId,
-          userId: user.id,
-          admissionNo,
-          dateOfBirth: application.dateOfBirth,
-          gender: application.gender,
-        }
-      });
-
-      if (body.sectionId) {
-        await prisma.enrollment.create({
-          data: {
-            tenantId,
-            studentId: student.id,
-            sectionId: body.sectionId,
-            academicYearId: currentApp.cycle.academicYearId,
-            status: "ACTIVE"
-          }
+      // If approved, increment filled seats
+      if (body.status === "APPROVED" && currentApp.status !== "APPROVED") {
+        await tx.admissionCycle.update({
+          where: { id: application.cycleId },
+          data: { filledSeats: { increment: 1 } },
         });
       }
 
-      await prisma.guardian.create({
-        data: {
-          tenantId,
-          studentId: student.id,
-          name: application.parentName,
-          relation: "Parent",
-          phone: application.parentPhone,
-          email: application.parentEmail,
-        }
-      });
-    }
+      let parentLogin: null | { parentId: string; email: string; password: string; childId: string } = null;
 
-    return NextResponse.json(application);
+      // Auto-enroll into People (Student) if transitioning to ENROLLED
+      if (body.status === "ENROLLED" && currentApp.status !== "ENROLLED") {
+        const studentCount = await tx.student.count({ where: { tenantId } });
+        const admissionNo = `STD-${new Date().getFullYear()}-${String(studentCount + 1).padStart(4, "0")}`;
+        const studentPasswordHash = await bcrypt.hash("password123", 10);
+        const parentEmail = application.parentEmail.trim().toLowerCase();
+        const parentDefaultPassword = "Parent@1234";
+        const formData = (application.formData ?? {}) as Record<string, unknown>;
+        const storedParentPasswordHash = typeof formData.parentPasswordHash === "string" ? formData.parentPasswordHash : null;
+        const parentPasswordHash = storedParentPasswordHash ?? await bcrypt.hash(parentDefaultPassword, 10);
+
+        const conflictingUser = await tx.user.findFirst({
+          where: { tenantId, email: parentEmail, deletedAt: null },
+          select: { id: true, role: true, name: true, email: true, phone: true },
+        });
+
+        if (conflictingUser && conflictingUser.role !== "PARENT") {
+          throw new ResponseError("Parent email/login ID is already used by another role", 409);
+        }
+
+        const parentUser = conflictingUser ?? await tx.user.create({
+          data: {
+            tenantId,
+            name: application.parentName,
+            email: parentEmail,
+            phone: application.parentPhone,
+            passwordHash: parentPasswordHash,
+            role: "PARENT",
+          },
+          select: { id: true, name: true, email: true, phone: true, role: true },
+        });
+
+        if (conflictingUser && !conflictingUser.phone && application.parentPhone) {
+          await tx.user.update({
+            where: { id: conflictingUser.id },
+            data: { phone: application.parentPhone },
+          });
+        }
+
+        const studentUser = await tx.user.create({
+          data: {
+            tenantId,
+            name: application.studentName,
+            email: `${admissionNo.toLowerCase()}@school.edu`,
+            passwordHash: studentPasswordHash,
+            role: "STUDENT",
+          }
+        });
+
+        const student = await tx.student.create({
+          data: {
+            tenantId,
+            userId: studentUser.id,
+            admissionNo,
+            dateOfBirth: application.dateOfBirth,
+            gender: application.gender,
+          }
+        });
+
+        if (body.sectionId) {
+          await tx.enrollment.create({
+            data: {
+              tenantId,
+              studentId: student.id,
+              sectionId: body.sectionId,
+              academicYearId: currentApp.cycle.academicYearId,
+              status: "ACTIVE"
+            }
+          });
+        }
+
+        const guardian = await tx.guardian.create({
+          data: {
+            tenantId,
+            studentId: student.id,
+            name: application.parentName,
+            relation: "Parent",
+            phone: application.parentPhone,
+            email: parentEmail,
+            isEmergency: true,
+            userId: parentUser.id,
+          }
+        });
+
+        parentLogin = {
+          parentId: guardian.id,
+          email: parentUser.email,
+          password: conflictingUser ? "existing password" : (storedParentPasswordHash ? "password entered on application" : parentDefaultPassword),
+          childId: student.id,
+        };
+      }
+
+      return { application, parentLogin };
+    });
+
+    return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof ResponseError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "A student or user with these details already exists" }, { status: 409 });
+    }
     console.error("PATCH /api/admissions/applications/[id] error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+class ResponseError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
   }
 }
 

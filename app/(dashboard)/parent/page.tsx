@@ -5,6 +5,7 @@ import Topbar from "@/components/layout/Topbar";
 import ParentDashboardClient from "./_dashboard";
 
 export const metadata = { title: "Parent Dashboard | EduERP" };
+export const dynamic = "force-dynamic";
 
 export default async function ParentDashboard() {
   const session = await auth();

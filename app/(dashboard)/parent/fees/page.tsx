@@ -5,6 +5,7 @@ import Topbar from "@/components/layout/Topbar";
 import ParentFeesClient from "./_client";
 
 export const metadata = { title: "My Fee Account" };
+export const dynamic = "force-dynamic";
 
 export default async function ParentFeesPage() {
   const session = await auth();

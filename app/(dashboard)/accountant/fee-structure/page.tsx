@@ -15,6 +15,7 @@ export default async function FeeStructurePage() {
 
   const feeStructures = await prisma.feeStructure.findMany({
     where: { tenantId },
+    include: { grade: { select: { name: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -35,6 +36,7 @@ export default async function FeeStructurePage() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Class</th>
                   <th>Amount</th>
                   <th>Frequency</th>
                   <th>Due Day</th>
@@ -46,6 +48,7 @@ export default async function FeeStructurePage() {
                 {feeStructures.map((fee) => (
                   <tr key={fee.id}>
                     <td>{fee.name}</td>
+                    <td>{fee.grade?.name ?? "All classes"}</td>
                     <td>${Number(fee.amount)}</td>
                     <td>{fee.frequency}</td>
                     <td>{fee.dueDay}</td>
@@ -57,7 +60,7 @@ export default async function FeeStructurePage() {
                 ))}
                 {feeStructures.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "hsl(var(--text-muted))" }}>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "hsl(var(--text-muted))" }}>
                       No fee structures found.
                     </td>
                   </tr>

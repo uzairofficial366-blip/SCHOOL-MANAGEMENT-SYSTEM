@@ -34,26 +34,65 @@ export async function POST(req: NextRequest) {
       studentId,
       periodLabel,   // "May 2025"
       dueDate,       // ISO date string
-      lineItems,     // [{ description, amount, feeStructureId? }]
+      lineItems,     // optional [{ description, amount, feeStructureId? }]; defaults to student's class fee structures
       notes,
       academicYearId,
     } = body;
 
-    if (!studentId || !periodLabel || !dueDate || !lineItems?.length) {
+    if (!studentId || !periodLabel || !dueDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const student = await prisma.student.findFirst({
+      where: { id: studentId, tenantId, deletedAt: null },
+      include: {
+        user: true,
+        guardians: { take: 1, orderBy: { isEmergency: "desc" } },
+        enrollments: {
+          where: { status: "ACTIVE" },
+          include: { section: { include: { grade: true } } },
+          take: 1,
+        },
+      },
+    });
+
+    if (!student) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    }
+
+    const activeGradeId = student.enrollments[0]?.section?.gradeId;
+    const resolvedLineItems = Array.isArray(lineItems) && lineItems.length > 0
+      ? lineItems
+      : activeGradeId
+        ? (await prisma.feeStructure.findMany({
+            where: {
+              tenantId,
+              deletedAt: null,
+              OR: [{ gradeId: activeGradeId }, { gradeId: null }],
+            },
+            orderBy: [{ gradeId: "desc" }, { name: "asc" }],
+          })).map((fee) => ({
+            description: fee.name,
+            amount: Number(fee.amount),
+            feeStructureId: fee.id,
+          }))
+        : [];
+
+    if (resolvedLineItems.length === 0) {
+      return NextResponse.json({ error: "No fee items were provided and no class fee structure exists for this student." }, { status: 400 });
     }
 
     // ── Auto-detect & apply sibling discount ──────────────────────────────
     await autoApplySiblingDiscount(tenantId, studentId);
 
     // ── Calculate gross amount from line items ────────────────────────────
-    const grossAmount = lineItems.reduce((sum: number, li: any) => sum + Number(li.amount), 0);
+    const grossAmount = resolvedLineItems.reduce((sum: number, li: any) => sum + Number(li.amount), 0);
 
     // ── Calculate all applicable discounts ────────────────────────────────
     const { totalDiscount, breakdown } = await calculateStudentDiscount(tenantId, studentId, grossAmount);
 
     // Distribute discount across line items proportionally
-    const enrichedItems = lineItems.map((li: any, idx: number) => {
+    const enrichedItems = resolvedLineItems.map((li: any, idx: number) => {
       const liAmount = Number(li.amount);
       const liDiscount = grossAmount > 0 ? (liAmount / grossAmount) * totalDiscount : 0;
       const discountBreakdown = idx === 0 ? breakdown.map((b) => b.name).join(", ") : null;
@@ -133,11 +172,6 @@ export async function POST(req: NextRequest) {
     });
 
     // ── Notify guardian ───────────────────────────────────────────────────
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: { user: true, guardians: { take: 1, orderBy: { isEmergency: "desc" } } },
-    });
-
     const guardian = student?.guardians?.[0];
     if (guardian?.phone) {
       await notifyInvoiceGenerated({

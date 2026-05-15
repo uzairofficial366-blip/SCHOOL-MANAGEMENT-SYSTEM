@@ -9,6 +9,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Seeding...");
   const hash = await bcrypt.hash("Admin@1234", 12);
+  const parentHash = await bcrypt.hash("Parent@1234", 12);
 
   // TENANT
   const tenant = await prisma.tenant.upsert({
@@ -92,10 +93,11 @@ async function main() {
 
   const userMap: Record<string, string> = {};
   for (const r of roles) {
+    const passwordHash = r.role === "PARENT" ? parentHash : hash;
     const u = await prisma.user.upsert({
       where: { tenantId_email: { tenantId: tid, email: r.email } },
-      update: {},
-      create: { tenantId: tid, email: r.email, name: r.name, passwordHash: hash, role: r.role, isActive: true },
+      update: { name: r.name, passwordHash, role: r.role, isActive: true },
+      create: { tenantId: tid, email: r.email, name: r.name, passwordHash, role: r.role, isActive: true },
     });
     userMap[r.email] = u.id;
   }
@@ -218,14 +220,32 @@ async function main() {
   }
 
   // GUARDIANS
-  await prisma.guardian.createMany({
-    data: studentIds.map((sid, i) => ({
-      tenantId: tid, studentId: sid,
-      name: `Guardian ${i+1}`, relation: "Father",
-      phone: `0300-111000${i+1}`, email: `parent${i+1}@gmail.com`, isEmergency: true,
-    })),
-    skipDuplicates: true,
-  });
+  for (let i = 0; i < studentIds.length; i++) {
+    const linkedToDemoParent = i < 2;
+    const existingGuardian = await prisma.guardian.findFirst({
+      where: {
+        tenantId: tid,
+        studentId: studentIds[i],
+        ...(linkedToDemoParent ? { userId: userMap["parent1@demo-school.edu"] } : { userId: null }),
+      },
+    });
+    const data = {
+      tenantId: tid,
+      studentId: studentIds[i],
+      name: linkedToDemoParent ? "Mr. Ali (Parent)" : `Guardian ${i + 1}`,
+      relation: "Father",
+      phone: linkedToDemoParent ? "0300-1110001" : `0300-111000${i + 1}`,
+      email: linkedToDemoParent ? "parent1@demo-school.edu" : `parent${i + 1}@gmail.com`,
+      isEmergency: true,
+      userId: linkedToDemoParent ? userMap["parent1@demo-school.edu"] : null,
+    };
+
+    if (existingGuardian) {
+      await prisma.guardian.update({ where: { id: existingGuardian.id }, data });
+    } else {
+      await prisma.guardian.create({ data });
+    }
+  }
 
   // ENROLLMENTS (first 3 in 8A, last 2 in 9A)
   const enrolData = [
@@ -495,6 +515,7 @@ async function main() {
   console.log("   admin@demo-school.edu | teacher1@demo-school.edu | teacher2@demo-school.edu");
   console.log("   student1@demo-school.edu .. student5@demo-school.edu");
   console.log("   accountant@demo-school.edu | librarian@demo-school.edu | warden@demo-school.edu");
+  console.log("   parent1@demo-school.edu | Password: Parent@1234");
 }
 
 main()

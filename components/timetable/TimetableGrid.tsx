@@ -70,15 +70,20 @@ export default function TimetableGrid({ slots, onDeleteSlot, isAdmin }: Props) {
                     <td key={dayIndex} style={{ padding: "0.25rem", borderBottom: "1px solid #eaeaea", borderRight: "1px solid #eaeaea", verticalAlign: "top", height: "60px", position: "relative" }}>
                       {slot && (
                         <div style={{
-                          background: "hsl(var(--primary) / 0.1)",
-                          border: "1px solid hsl(var(--primary) / 0.2)",
+                          background: isAdmin ? "#f8fafc" : "hsl(var(--primary) / 0.1)",
+                          border: isAdmin ? "1px solid #cbd5e1" : "1px solid hsl(var(--primary) / 0.2)",
                           borderRadius: "5px",
                           padding: "0.2rem 0.3rem",
                           height: "100%",
                           position: "relative",
                           overflow: "hidden"
                         }}>
-                          <div style={{ fontWeight: 700, fontSize: "0.75rem", color: "hsl(var(--primary))", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{slot.subject.name}</div>
+                          {isAdmin && (
+                            <div style={{ fontSize: "0.58rem", fontWeight: 800, color: "#b91c1c", textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.2 }}>
+                              Occupied / Closed
+                            </div>
+                          )}
+                          <div style={{ fontWeight: 700, fontSize: "0.75rem", color: isAdmin ? "#334155" : "hsl(var(--primary))", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{slot.subject.name}</div>
                           <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: 1.2 }}>{slot.section.grade.name} · {slot.section.name}</div>
                           <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 600, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{slot.staff.user.name}</div>
 
